@@ -15,10 +15,10 @@
 | 9 | Solidity UML 类图 | P1 | ✅ | mermaid 落盘 docs/uml |
 | 10 | 静态分析面板 | P1 | ✅ | Gas 7/Advisory 80,J-006 |
 | 11 | 编译器 optimizer/runs 配置 | P1 | ✅ | optimizer ON 编译过 |
-| 12 | VM 部署 + 交互 | P2 | ☐ | |
-| 13 | 交易记录器(录制/回放) | P2 | ☐ | |
-| 14 | 调试器(步进) | P2 | ☐ | |
-| 15 | Export to TronBox | P2 | ☐ | |
+| 12 | VM 部署 + 交互 | P2 | ✅ | 创世 mint/读回/revert 守卫全过 |
+| 13 | 交易记录器(录制/回放) | P2 | ✅ | 回放重建状态;失败步骤停住 |
+| 14 | 调试器(步进) | P2 | ✅ | 创世 tx 步进正常 |
+| 15 | Export to TronBox | P2 | ✅ | J-007, J-008 |
 | 16 | Git 面板(init/branch/commit) | P3 | ☐ | |
 | 17 | GitHub OAuth/token + push | P3 | ☐ | |
 | 18 | git clone(经 CORS 代理) | P3 | ☐ | |
