@@ -22,7 +22,7 @@
 | 16 | Git 面板(init/branch/commit) | P3 | ✅ | 自动 init、快照 commit、ide-workspace 分支 |
 | 17 | GitHub OAuth/token + push | P3 | ✅ | PAT 内存连接 + 经代理真实 push(CI 未覆盖面) |
 | 18 | git clone(经 CORS 代理) | P3 | ✅ | 公开仓库克隆回新工作区 |
-| 19 | TronLink 实链部署(Nile) | P4 | ☐ | |
-| 20 | Flatten + Contract Verification | P4 | ☐ | |
+| 19 | TronLink 实链部署(Nile) | P4 | ✅ | TBig1iST…gb18V 上链;签名时效观察 |
+| 20 | Flatten + Contract Verification | P4 | ✅ | flattened 10374 字符入库 |
 | 21 | Export/Restore Zip 备份 | P5 | ☐ | |
 | 22 | 全局搜索/替换 | P1+ | ☐ | |

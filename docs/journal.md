@@ -59,3 +59,15 @@
 **做了什么**:GitHub PAT 经 Home 面板连接(内存态,面板显示 Redchar1992)→ Git 面板确认工作区已自动 init → Stage all + commit「IDE workspace snapshot」→ 新建并切到 `ide-workspace` 分支 → 添加 remote → **经 CORS 代理真实 push 成功**(服务端核实分支与提交均到位——这是 CI 里从未跑过的带真实凭据推送路径)→ 用 clone 流把仓库克隆回全新工作区(README 落位)。**J-003 修复当场自验**:重启浏览器后 IDE 恢复到 three-realms,不再落 default_workspace。截图:`journal/p3-*.png`。
 
 **发现**:本阶段零新缺陷。推送/克隆链路(含 token 内存化、代理转发)在真实凭据下一次通过;唯一注意点是 push 前若未连接 token,面板会给出明确引导文案(设计如此,非缺陷)。
+
+## 2026-07-13 · P4 Nile 实链
+
+**做了什么**:CDP 接管用户 Chrome(TronLink 解锁,Nile)→ 因浏览器 profile 不互通,轻量方式重建工作区(`three-realms-live`,只写合约文件)→ 编译 → Injected TronWeb 部署(用户 TronLink 签名)→ **`ThreeRealmsCards` 上链 Nile:`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`** → 创世 mint 上链 → 链上读回三连全对(`balanceOf`=3、刘备、关羽元数据 data-URI 当场解码)→ Flatten(10374 字符,`exports/verification-flattened.sol`)+ 验证包生成。部署与铸造交易见 `deployments/nile.md`。
+
+**发现**:
+
+- **J-009(真缺陷,LocalStorage 后端家族)**:IDE 克隆**含图片的中型仓库**(本仓库,含若干截图 PNG)在已有 ~2MB 存量的 profile 里**中途失败**,且留下"已选中的空工作区"(`.workspaces/ThreeRealmsCards` 存在但空,文件树空白,reload 不恢复)。根因指向 localStorage 配额(~5MB,二进制还要 base64 膨胀 33%)。失败回切(D17)未覆盖此变体;错误文案未捕获到(面板状态被后续 reload 冲掉),待专项复现。修复方向与 J-005 同:IndexedDB 后端迁移(配额升到 GB 级)+ 克隆前预检仓库体积/配额。
+- **签名时效观察(非缺陷)**:TRON 交易 ~60 秒过期;首次部署弹窗签晚了,IDE 终端明确报 `Transaction signature timed out. Please try again.`(可见失败,处理正确)。重试即成。
+- **驱动经验**:webpack dev-server 报错遮罩 iframe 会拦截页面点击,驱动每次注入隐藏 CSS;双浏览器 profile(无头 dogfooding vs 用户真机)工作区数据不互通是 localStorage 特性,属预期。
+
+**顺畅**:Injected TronWeb 环境切换、部署/mint 的钱包弹窗链路、链上读回、Flatten/验证包全部一次通过;全链上 data-URI 元数据在真链上原样可解——MVP 技术路线闭环。
