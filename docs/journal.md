@@ -38,3 +38,18 @@
 - 顺手确认:回放在失败步骤(第二次创世)停住、成功步骤的状态保留——与录制器设计一致。
 
 **顺畅**:部署/交互/读回、scenario 存取与回放、调试器步进、TronBox 包结构(contracts + migrations + config + README)都一次通过;`tokenURI` 全链上 base64 在 VM 上直接可解。
+
+## 2026-07-13 · 缺陷回流与更正
+
+**已修进 IDE**(tron-remix `release/v2.3.2`,17/17 回归绿):
+
+- **J-002 ✅ 修复**(`879535f07`):compilerMetadata 的 artifacts 写入不再弹 "is modifying" toast。
+- **J-003 ✅ 修复**(`879535f07`):最后使用的工作区跨会话恢复(localStorage 标记 + boot 优先恢复,含失效回退);新 TC-WS-RESTORE-1 @gate。
+- **J-006 ✅ 修复**(`540d7e00d`):静态分析结果分组可折叠,Advisory 组默认收起,Security/Gas 保持展开;TC-SA-003 @gate。
+- **J-008 ✅ 修复**(`b44b9c93c`):recorder 给 revert 交易补 `failed` 标记,TronBox 导出把失败步骤按 TODO 约定注释输出(回放语义不变,TC-REC-006 仍绿);TC-REC-EXP-1 @gate。
+
+**更正(诚实记账)**:
+
+- **J-001 大部分撤回**:推荐版本徽章本来就是可点击按钮(`onClick=handleLoadVersion`),P0 走读时未尝试点击。残余问题仅"默认值是否跟随推荐"——考虑到默认本地版本秒开、推荐版本一键可达,现状合理,不改。
+- **J-007 撤回**:`exportTronboxProject` 对空录制**已有** "Nothing to export" 模态(且相邻场景有 spec 覆盖);P2 观察到的"静默"是驱动脚本只等 download 事件、未检查模态——驱动盲区,非产品缺陷。
+- **J-005 根因确认**:并非 AsyncMirror——`main.js` 的 BrowserFS 用 **LocalStorage 后端**,Chromium 对 localStorage 惰性落盘,浏览器进程级崩溃丢最近写入(正常关闭安全)。治本 = 迁移 IndexedDB 后端 + 存量数据迁移,已列 v2.3.3 设计项。
