@@ -1,0 +1,536 @@
+{
+	"compiler": {
+		"version": "0.8.6+commit.0e36fba0.mod"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "holder",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "approved",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "Approval",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "holder",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "approved",
+						"type": "bool"
+					}
+				],
+				"name": "ApprovalForAll",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "general",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "enum ThreeRealmsCards.Faction",
+						"name": "faction",
+						"type": "uint8"
+					},
+					{
+						"indexed": false,
+						"internalType": "enum ThreeRealmsCards.Rarity",
+						"name": "rarity",
+						"type": "uint8"
+					}
+				],
+				"name": "CardMinted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "Transfer",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "approved",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "approve",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "balanceOf",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "cardOf",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "general",
+								"type": "string"
+							},
+							{
+								"internalType": "enum ThreeRealmsCards.Faction",
+								"name": "faction",
+								"type": "uint8"
+							},
+							{
+								"internalType": "enum ThreeRealmsCards.Rarity",
+								"name": "rarity",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "attack",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "intellect",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "command",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "charisma",
+								"type": "uint8"
+							},
+							{
+								"internalType": "string",
+								"name": "series",
+								"type": "string"
+							}
+						],
+						"internalType": "struct ThreeRealmsCards.Card",
+						"name": "card",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "contractOwner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "genesisMinted",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "getApproved",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "isApprovedForAll",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "general",
+								"type": "string"
+							},
+							{
+								"internalType": "enum ThreeRealmsCards.Faction",
+								"name": "faction",
+								"type": "uint8"
+							},
+							{
+								"internalType": "enum ThreeRealmsCards.Rarity",
+								"name": "rarity",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "attack",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "intellect",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "command",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint8",
+								"name": "charisma",
+								"type": "uint8"
+							},
+							{
+								"internalType": "string",
+								"name": "series",
+								"type": "string"
+							}
+						],
+						"internalType": "struct ThreeRealmsCards.Card",
+						"name": "card",
+						"type": "tuple"
+					}
+				],
+				"name": "mintCard",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "mintPeachGardenGenesis",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "firstTokenId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "name",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "nextTokenId",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "ownerOf",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "approved",
+						"type": "bool"
+					}
+				],
+				"name": "setApprovalForAll",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "symbol",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "tokenURI",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "transferFrom",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"title": "三分天下 · Three Realms Cards — Three Kingdoms general cards (TRC-721).",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {
+				"mintPeachGardenGenesis(address)": {
+					"notice": "One-shot genesis: the Peach Garden oath trio, LEGEND 1/1s."
+				},
+				"tokenURI(uint256)": {
+					"notice": "Fully on-chain metadata: data:application/json;base64,…"
+				}
+			},
+			"notice": "Self-contained (no imports) so it compiles in the browser IDE. TRC-721 core surface + on-chain card attributes + data-URI metadata. The faction/rarity/stat model and the one-shot \"Peach Garden\" genesis are specified in the project README.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ThreeRealmsCards.sol": "ThreeRealmsCards"
+		},
+		"evmVersion": "berlin",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/ThreeRealmsCards.sol": {
+			"keccak256": "0x3803e5b0b840673bfb1e277a10daf5c5e776d6a6db31afbc17f7a2957722041e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4a6ef54b24b3ad060e10c24eb7d0c4fdfef92d7901332df4208f0051df0eb967",
+				"dweb:/ipfs/QmQxy7t3vgsdzrhe87fiJRyTwEvrLp17ZnFeq5TCBi9fg6"
+			]
+		}
+	},
+	"version": 1
+}
