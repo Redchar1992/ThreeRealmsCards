@@ -85,3 +85,23 @@
 - **全局搜索 ✓**:跨文件检索命中合约(scenario 无该词,单命中为正确行为)。
 
 **战役总账**:矩阵 22 项 = 20✅ + 1◐(备份恢复,J-010)+ 1◐(AI 真模型链路另测);发现 J-001~J-010 共 10 条:**5 修复入库**(J-002/003/006/008/009,含 @gate 回归 6 条)、**2 诚实撤回**(J-001/J-007,驱动盲区)、**2 定为 v2.3.3 设计项**(J-005/J-010,同根:LocalStorage 后端 → IndexedDB 迁移)、**1 产品观察**(签名时效)。「三分天下」从零到 Nile 上链 + 创世铸造,全程 IDE 内完成。
+
+## 2026-07-13 · P6 多文件刁钻架构轮
+
+**架构升级**:单合约 → **9 文件**(types/interfaces/libs/access + 双可部署合约),故意堆满冷门写法:文件级 struct/enum/自由函数/自定义错误、`using {cardKey} for Card global`、别名命名导入(`Str as S`)、跨目录相对导入、`../contracts/` 同文件双路径陷阱、映射公共变量覆写接口函数、纯函数覆写 view 接口、assembly、try/catch 双分支、unchecked、reverting receive/fallback、不可变接口引用。新增 `PeachPavilion` 礼物托管合约(存卡指定继承人、跨账户领取)。
+
+**全管线重测结果**:
+
+- ✅ AI 连续 9 次 `create_file` 工具链(9 个确认框依次点过),工作区字节级一致
+- ✅ 0.8.20(builtin)编译 7 文件依赖图一次通过;`../contracts/` 双路径被解析器正确归一
+- ✅ 拍平:主图 13464 字符,`struct Card` ×1、global using ×1(去重正确),入库 `exports/ThreeRealmsCards_flat.sol`
+- ✅ UML 画出跨文件继承(Suzerain);静态分析 Security 2 / Gas 12 / Advisory 79(默认折叠生效)
+- ✅ VM 链上:双合约部署(构造参数传址)、创世、**global using 的 `cardKeyOf` 链上返回 bytes32**、库管线 tokenURI 解码、**托管全流程**(approve→deposit→错误账户领取被拒→切账户领取成功)
+- ✅ 全局搜索跨新文件命中
+
+**新发现**:
+
+- **J-011 ✅ 当场修复**(tron-remix `b3a841d05`):linter 对**文件级自由函数**误报 func-visibility(自由函数不允许写可见性)——SourceUnit 直属函数豁免;TC-LINT-008 @gate 双向钉死。
+- **J-012(增强项)**:VM 终端对**自定义错误不按名解码**(`NotDesignatedHeir` 只显示原始 revert)——ABI 在手,可解码;require 字符串时代的遗留,建议 v2.3.3 补。
+- **J-013(严重,待修)**:**编译器版本不满足 pragma 时完全静默失败**——0.8.6 编 `^0.8.20`:无报错面板、无编辑器标注、还展示上一轮的陈旧产物。两个独立探针互证。属本仓库"静默失败"系统性整改的漏网,优先修复。
+- 观察 ×3(驱动/UX):Flatten 跟随**最后一次编译**的合约而非当前文件(无提示);实例标题被 CSS 大写化且无 data-id 携带地址(自动化要走 recorder 地址簿);编译产物面板在新一轮编译失败时**不清空旧内容**(与 J-013 复合放大误导)。

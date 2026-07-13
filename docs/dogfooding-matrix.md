@@ -26,3 +26,4 @@
 | 20 | Flatten + Contract Verification | P4 | ✅ | 验证包 Nile 已生成;Check status 链路通 |
 | 21 | Export/Restore Zip 备份 | P5 | ◐ | 导出 ✓(107 文件离线验证);恢复 = J-010 |
 | 22 | 全局搜索/替换 | P1+ | ✅ | 跨工作区命中合约 |
+| 23 | 多文件架构全管线(9 文件/刁钻写法) | P6 | ✅ | J-011 已修, J-012, J-013 |
