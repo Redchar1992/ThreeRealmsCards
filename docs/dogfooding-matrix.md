@@ -6,15 +6,15 @@
 |---|---|---|---|---|
 | 1 | Home 欢迎/工作区状态 | P0 | ✅ | — |
 | 2 | 工作区模板(trc721-minimal) | P0 | ✅ | — |
-| 3 | 编译器(builtin/版本选择) | P0/P1 | ◐ | J-001, J-002 |
-| 4 | 实时 lint(边写边标注) | P1 | ☐ | |
-| 5 | AI 面板(explain/工具循环) | P1 | ☐ | |
-| 6 | AI 工作区动作(create_file) | P1 | ☐ | |
-| 7 | 右键菜单 / Format code | P1 | ☐ | |
-| 8 | 自动保存 | P1 | ☐ | |
-| 9 | Solidity UML 类图 | P1 | ☐ | |
-| 10 | 静态分析面板 | P1 | ☐ | |
-| 11 | 编译器 optimizer/runs 配置 | P1 | ☐ | |
+| 3 | 编译器(builtin/版本选择) | P0/P1 | ✅ | J-001, J-002, J-004 |
+| 4 | 实时 lint(边写边标注) | P1 | ✅ | — |
+| 5 | AI 面板(explain/工具循环) | P1 | ◐ | 工具循环 UI 已走(mock 模型);真模型链路 7-10 已实测 |
+| 6 | AI 工作区动作(create_file) | P1 | ✅ | 确认框→落盘字节一致 |
+| 7 | 右键菜单 / Format code | P1 | ✅ | Format 归一化缩进 |
+| 8 | 自动保存 | P1 | ✅ | ~5s 防抖落盘 |
+| 9 | Solidity UML 类图 | P1 | ✅ | mermaid 落盘 docs/uml |
+| 10 | 静态分析面板 | P1 | ✅ | Gas 7/Advisory 80,J-006 |
+| 11 | 编译器 optimizer/runs 配置 | P1 | ✅ | optimizer ON 编译过 |
 | 12 | VM 部署 + 交互 | P2 | ☐ | |
 | 13 | 交易记录器(录制/回放) | P2 | ☐ | |
 | 14 | 调试器(步进) | P2 | ☐ | |

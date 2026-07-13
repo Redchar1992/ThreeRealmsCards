@@ -1,0 +1,28 @@
+classDiagram
+class ThreeRealmsCards {
+    +string name
+    +string symbol
+    +address contractOwner
+    +uint256 nextTokenId
+    +bool genesisMinted
+    +mapping ownerOf
+    +mapping balanceOf
+    +mapping getApproved
+    +mapping isApprovedForAll
+    -mapping _cards
+    +constructor()
+    +mintCard(address, Card) uint256
+    +mintPeachGardenGenesis(address) uint256
+    #_mint(address, Card) uint256
+    +approve(address, uint256)
+    +setApprovalForAll(address, bool)
+    +transferFrom(address, address, uint256)
+    +cardOf(uint256) Card
+    +tokenURI(uint256) string
+    #_attributesJson(Card) bytes
+    #_factionName(Faction) string
+    #_rarityName(Rarity) string
+    #bytes _TABLE
+    #_toString(uint256) string
+    #_base64(bytes) string
+}
