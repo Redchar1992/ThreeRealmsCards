@@ -19,9 +19,9 @@
 | 13 | 交易记录器(录制/回放) | P2 | ✅ | 回放重建状态;失败步骤停住 |
 | 14 | 调试器(步进) | P2 | ✅ | 创世 tx 步进正常 |
 | 15 | Export to TronBox | P2 | ✅ | J-007 撤回, J-008 已修 |
-| 16 | Git 面板(init/branch/commit) | P3 | ☐ | |
-| 17 | GitHub OAuth/token + push | P3 | ☐ | |
-| 18 | git clone(经 CORS 代理) | P3 | ☐ | |
+| 16 | Git 面板(init/branch/commit) | P3 | ✅ | 自动 init、快照 commit、ide-workspace 分支 |
+| 17 | GitHub OAuth/token + push | P3 | ✅ | PAT 内存连接 + 经代理真实 push(CI 未覆盖面) |
+| 18 | git clone(经 CORS 代理) | P3 | ✅ | 公开仓库克隆回新工作区 |
 | 19 | TronLink 实链部署(Nile) | P4 | ☐ | |
 | 20 | Flatten + Contract Verification | P4 | ☐ | |
 | 21 | Export/Restore Zip 备份 | P5 | ☐ | |

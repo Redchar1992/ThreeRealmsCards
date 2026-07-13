@@ -53,3 +53,9 @@
 - **J-001 大部分撤回**:推荐版本徽章本来就是可点击按钮(`onClick=handleLoadVersion`),P0 走读时未尝试点击。残余问题仅"默认值是否跟随推荐"——考虑到默认本地版本秒开、推荐版本一键可达,现状合理,不改。
 - **J-007 撤回**:`exportTronboxProject` 对空录制**已有** "Nothing to export" 模态(且相邻场景有 spec 覆盖);P2 观察到的"静默"是驱动脚本只等 download 事件、未检查模态——驱动盲区,非产品缺陷。
 - **J-005 根因确认**:并非 AsyncMirror——`main.js` 的 BrowserFS 用 **LocalStorage 后端**,Chromium 对 localStorage 惰性落盘,浏览器进程级崩溃丢最近写入(正常关闭安全)。治本 = 迁移 IndexedDB 后端 + 存量数据迁移,已列 v2.3.3 设计项。
+
+## 2026-07-13 · P3 版本管理
+
+**做了什么**:GitHub PAT 经 Home 面板连接(内存态,面板显示 Redchar1992)→ Git 面板确认工作区已自动 init → Stage all + commit「IDE workspace snapshot」→ 新建并切到 `ide-workspace` 分支 → 添加 remote → **经 CORS 代理真实 push 成功**(服务端核实分支与提交均到位——这是 CI 里从未跑过的带真实凭据推送路径)→ 用 clone 流把仓库克隆回全新工作区(README 落位)。**J-003 修复当场自验**:重启浏览器后 IDE 恢复到 three-realms,不再落 default_workspace。截图:`journal/p3-*.png`。
+
+**发现**:本阶段零新缺陷。推送/克隆链路(含 token 内存化、代理转发)在真实凭据下一次通过;唯一注意点是 push 前若未连接 token,面板会给出明确引导文案(设计如此,非缺陷)。
