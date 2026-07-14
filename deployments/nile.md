@@ -18,6 +18,8 @@
 
 **P13 市集全周期**:`CardBazaar` @ `TKfYhL4AQvR5zHxaWezFN4ve7PChsEB6RU`(无 owner 无费用)。真实 TRX 走完整环:`approve`(tx `0187af70…`)→ `list(#3, 100 TRX)`(tx `8adc82f8…`,链上核验张飞入柜托管 + 摊位记录)→ `buy` 恰好价(tx [`b534b47a…`](https://nile.tronscan.org/#/transaction/b534b47a2b6af90ab73950d21bed91d9c8b1f1cc4eb4b4116501634dc74288e0),卡归买家、市集账户余额=100 TRX、待提款账本=100 TRX)→ `withdraw`(tx `85ce25e9…`,账本与市集余额双双归零)。**value 闭环收官**——四步全部 TronGrid 直查验证。
 
+**P14 桃园馆时间演武**:`PeachPavilion v2` @ `TTSyQWDjVbtWv9DuR74HF8fLX9Wsi3iX62`(**首次上链**;期限 + 悔赠版)。两条路径真链实证:①赠礼(+1h 窗口,tx `7b931367…`)→ 继承人即领(tx `9092f695…`);②再赠(+90s 窗口,tx `e70703e7…`)→ **期限内经 `triggerconstantcontract` 模拟悔赠——被拒且回执解码出 `GiftStillClaimable` 自定义错误**(零成本证伪,一笔失败交易都不用付)→ 真实等待窗口关闭 → 悔赠落地(tx [`52c845c3…`](https://nile.tronscan.org/#/transaction/52c845c3b5b30122e6ed626e20ed440c9685b70e07d25b6a990218855955a2bc))、礼位清空。**边界规则"含端秒归继承人、过期后归赠予人"在真实链时上闭环**。
+
 链上验证(TronGrid 直查):`renderer()==CardRenderer`、`rendererSealed=false`、`genesisSealed=true`、`totalMinted=3`、`supportsInterface(0x80ac58cd)=true`;**三张创世卡的 `tokenURI` 均可经公共节点读出**——双层 data-URI 解码成功,每张内嵌 SVG ~2.1KB,刘备/关羽/张飞 LEGEND 五星卡面完整。
 
 > 性能教训:P10 的 v4 版 tokenURI(SVG + 双层 base64 逐字节循环)重达 **4.07M gas**,TronGrid 公共节点直接以 `OutOfTimeException`(常量调用 CPU 时限)拒读——**全链上美术的硬约束**。assembly Base64 + SVG 标记瘦身后降到 **1.46M(-64%)**,公共节点恢复可读。
