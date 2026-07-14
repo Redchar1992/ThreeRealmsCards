@@ -1,6 +1,33 @@
 # Nile 测试网部署记录
 
-## v3 — 加固版模块化架构(当前)
+## v5 — 渲染层版(当前)
+
+| 项 | 值 |
+|---|---|
+| 合约 | `ThreeRealmsCards`(13 文件:加固版 + 可插拔链上 SVG 渲染层,assembly Base64) |
+| 地址 | `TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X` |
+| 渲染器 | `CardRenderer` @ `TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ`(**未封印**,可迭代) |
+| 部署交易 | [`26989981…`](https://nile.tronscan.org/#/transaction/26989981b1e7e99eae83) 创世 [`4277ff15…`] 渲染器 [`1bc86758…`] 接线 [`8a3061e2…`](txid 前缀,完整见账户页) |
+| 部署账户 | `TCrDi83pUoK17GbwxN1SckM3YNXzahWvoN` |
+| 编译器 | Tron Solidity 0.8.20(builtin);fee limit 上限 1000 TRX |
+| 驱动 | `tools/p11-nile-v5.cjs` + `tools/p11b-genesis-renderer.cjs` |
+| 日期 | 2026-07-14(P11) |
+
+链上验证(TronGrid 直查):`renderer()==CardRenderer`、`rendererSealed=false`、`genesisSealed=true`、`totalMinted=3`、`supportsInterface(0x80ac58cd)=true`;**三张创世卡的 `tokenURI` 均可经公共节点读出**——双层 data-URI 解码成功,每张内嵌 SVG ~2.1KB,刘备/关羽/张飞 LEGEND 五星卡面完整。
+
+> 性能教训:P10 的 v4 版 tokenURI(SVG + 双层 base64 逐字节循环)重达 **4.07M gas**,TronGrid 公共节点直接以 `OutOfTimeException`(常量调用 CPU 时限)拒读——**全链上美术的硬约束**。assembly Base64 + SVG 标记瘦身后降到 **1.46M(-64%)**,公共节点恢复可读。
+
+## v4 — 渲染层首发(历史,渲染器已封印)
+
+| 项 | 值 |
+|---|---|
+| 合约 / 渲染器 | `THRSFpEVownGtVx7WjdzYbbvqbTsD3iywJ` / `TCPVf7pGZWZ8Gn28eqJXfBTrFhNzfXaEoj` |
+| 状态 | 创世已铸;`rendererSealed=true`;tokenURI 因 4.07M gas 在公共节点不可读(见上) |
+| 日期 | 2026-07-14(P10) |
+
+> 诚实入账:v4 的封印**并非有意**——驱动脚本用子串匹配选择实例行,`renderer` 命中了 `sealRenderer`,弹窗自动确认器把这笔交易签了(链上可见后续 4 笔 `RendererSealed` revert)。测试网无损失,主网即事故;修复 = 精确匹配行选择器(p11 起)。**模糊选择器 + 自动签名 = 不可逆链上变更**,这是 P10 最贵的一课。
+
+## v3 — 加固版模块化架构(历史)
 
 | 项 | 值 |
 |---|---|

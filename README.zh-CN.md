@@ -36,7 +36,7 @@ contracts/
 │   ├── render/CardRenderer.sol 丹青 —— 纯链上 SVG 卡面
 │   ├── types/CardTypes.sol     文件级枚举、Card 结构、自由函数、global using-for
 │   ├── libs/CardCodec.sol      Card → data:application/json;base64（含 JSON 转义）
-│   ├── libs/Base64.sol         循环实现的编码器，无 assembly
+│   ├── libs/Base64.sol         assembly 编码器（公共节点 CPU 时限所迫——见文档）
 │   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
 ├── PeachPavilion.sol           桃园馆礼物托管：存卡指定继承人、继承人领取；
 │                               拒收绕过托管的裸 safeTransferFrom
@@ -47,11 +47,13 @@ contracts/
 
 | 版本 | 合约 | 地址 | 备注 |
 |---|---|---|---|
-| **v3（当前）** | `ThreeRealmsCards`（加固版 11 文件） | [`TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | 创世已铸；`supportsInterface(0x80ac58cd)` 与两步移交 ABI 链上验证 |
-| v2（历史） | `ThreeRealmsCards`（模块化 9 文件） | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | 首次模块化部署；`cardKeyOf`（global using-for）真链验证 |
-| v1（历史） | `ThreeRealmsCards`（单文件） | [`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | 战役首次部署 |
+| **v5（当前）** | `ThreeRealmsCards` + `CardRenderer` | [`TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X`](https://nile.tronscan.org/#/contract/TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X) · [`TAsJa3bb…`](https://nile.tronscan.org/#/contract/TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ) | 链上 SVG 卡面已生效；三张创世卡 `tokenURI` 均可经公共节点读出 |
+| v4（历史） | 渲染层首发 | [`THRSFpEV…`](https://nile.tronscan.org/#/contract/THRSFpEVownGtVx7WjdzYbbvqbTsD3iywJ) | 驱动 bug 误封印渲染器；4.07M gas 的 tokenURI 被公共节点拒读——均如实记录 |
+| v3（历史） | 加固版 11 文件 | [`TYK5P6bU…`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | `supportsInterface` 与两步移交链上验证 |
+| v2（历史） | 模块化 9 文件 | [`TEzyMokX…`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | `cardKeyOf`（global using-for）真链验证 |
+| v1（历史） | 单文件 | [`TBig1iST…`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | 战役首次部署 |
 
-交易、部署账户、能耗数据与验证材料见 [deployments/nile.md](deployments/nile.md)。
+交易、部署账户、能耗数据、事故实录与验证材料见 [deployments/nile.md](deployments/nile.md)。
 
 ## 快速开始
 

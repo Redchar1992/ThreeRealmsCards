@@ -43,7 +43,7 @@ stress fixture for Solidity toolchains (see [the spiky inventory](#the-spiky-con
 | `render/CardRenderer.sol` | 丹青 — the card face as pure on-chain SVG | user text in XML text nodes only, via `Str.escapeXml` |
 | `types/CardTypes.sol` | `Faction`, `Rarity`, `Card`, `clampStat`, `cardKey` | everything file-level; `using {cardKey} for Card global` |
 | `libs/CardCodec.sol` | `Card → data:application/json;base64` | escapes user strings; aliased import `Str as S` |
-| `libs/Base64.sol` | loop-based Base64 | no assembly, analyzer-friendly; differential-tested vs Node |
+| `libs/Base64.sol` | assembly Base64 encoder | was a byte loop until P10: the 4.07M-gas double-encoded tokenURI hit public nodes' constant-call CPU cap (`OutOfTimeException`); now 1.46M. Differential-tested vs Node across the swap |
 | `utils/StrUtils.sol` | `toString`, `equal`, `escapeJson` | escape: `"` `\` → backslashed, `< 0x20` → `\u00XX`, UTF-8 passthrough |
 | `PeachPavilion.sol` | escrow: deposit card for heir, heir claims | rejects naked `safeTransferFrom` deliveries |
 | `mocks/TestMocks.sol` | receiver mocks, lib harness, abstract-base shims | **never deploy** |
@@ -132,6 +132,7 @@ study** — it exists to stress a specific part of the toolchain. Do not
 | `try/catch` with both `Error(string)` and bare branches | `PeachPavilion.depositGift`, receiver probe | debugger, coverage of both decode paths |
 | reverting `receive()` **and** `fallback()` | both deployables | tooling that probes with plain transfers |
 | pluggable renderer with a one-way seal (`setRenderer` / `sealRenderer`) | `ThreeRealmsCards` | minimal-governance pattern: mutable until sealed, immutable after |
+| assembly Base64 (upgraded from a byte loop) | `libs/Base64.sol` | the P10 discovery: fully on-chain art must fit public nodes' constant-call CPU budget — heavyweight `tokenURI`s get `OutOfTimeException`, not metadata |
 | `try/catch` graceful degradation inside a view path | `ThreeRealmsCards.tokenURI` | external-call failure isolation; debugger/analyzer handling of catch-all in views |
 | `immutable` interface reference / `uint64` timestamp | `PeachPavilion.cards`, `Suzerain.enthronedAt` | storage-layout tooling |
 | free function validation (`clampStat` reverts, name notwithstanding) | `types/CardTypes.sol` | free-function call graphs (found J-011: linter false positive, fixed upstream) |

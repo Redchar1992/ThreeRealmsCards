@@ -14,14 +14,20 @@ const SCRATCH = '/private/tmp/claude-501/-Users-tron-Object-trontech-tron-remix/
 const REPO = '/Users/tron/Object/tronSmart/ThreeRealmsCards'
 const ROOT = REPO + '/contracts'
 const WS = 'three-realms-v2'
-// the 11-file hardened graph (p8 list; mocks stay out of the workspace)
-const FILES = [
-  'types/CardTypes.sol', 'utils/StrUtils.sol', 'libs/Base64.sol', 'libs/CardCodec.sol',
-  'access/Suzerain.sol',
-  'interfaces/ITRC165.sol', 'interfaces/ITRC721.sol', 'interfaces/ITRC721Metadata.sol',
-  'interfaces/ITRC721Receiver.sol',
-  'PeachPavilion.sol', 'ThreeRealmsCards.sol'
-]
+// the deployable graph, derived from the repo so new files (IRenderer,
+// render/CardRenderer, …) can never fall out of sync again; mocks are
+// test-only doubles and stay out of the workspace
+const FILES = (() => {
+  const out = []
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(path.join(ROOT, dir || '.'), { withFileTypes: true })) {
+      const rel = dir ? dir + '/' + e.name : e.name
+      if (e.isDirectory()) { if (e.name !== 'mocks') walk(rel) } else if (e.name.endsWith('.sol')) out.push(rel)
+    }
+  }
+  walk('')
+  return out.sort()
+})()
 const notes = []
 const log = (m) => console.log('[p9a]', m)
 const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
@@ -144,12 +150,24 @@ const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
   await deployBtn.click()
   const cardInstance = page.locator('.instance').first()
   await cardInstance.waitFor({ timeout: 30_000 })
-  // textContent keeps the ORIGINAL case (innerText is CSS-uppercased)
-  const cardAddr = await cardInstance.evaluate((el) => {
-    const m = el.textContent.match(/at (0x[0-9a-fA-F]{40})/i)
-    return m ? m[1] : ''
-  })
-  if (!cardAddr) { note('could not extract card instance address'); throw new Error('cardAddr') }
+  // The visible title ellipsizes the address (TVm22...AYG9R) — the FULL value
+  // lives in an attribute of the copy widget inside the instance subtree.
+  const extractAddr = (el) => {
+    const re = /(0x[0-9a-fA-F]{40}|41[0-9a-fA-F]{40}|T[1-9A-HJ-NP-Za-km-z]{33})/
+    const nodes = [el, ...el.querySelectorAll('*')]
+    for (const n of nodes) {
+      for (const a of Array.from(n.attributes || [])) {
+        const v = String(a.value)
+        if (v.includes('...')) continue
+        const m = v.match(re)
+        if (m) return m[1]
+      }
+    }
+    const m = el.textContent.match(re)
+    return m ? m[1] : ('NOMATCH:' + el.textContent.replace(/\s+/g, ' ').slice(0, 200))
+  }
+  const cardAddr = await cardInstance.evaluate(extractAddr)
+  if (cardAddr.startsWith('NOMATCH')) { note('could not extract card instance address — ' + cardAddr); throw new Error('cardAddr') }
   log('deployed ThreeRealmsCards at ' + cardAddr.slice(0, 12) + '…')
 
   // ---------------- genesis mint (records step 2)
@@ -168,7 +186,24 @@ const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
   else note('unexpected balanceOf after genesis: ' + balTxt.slice(-160))
 
   // ---------------- deploy PeachPavilion(card) (records step 3; created{ts}
-  // constructor reference must resolve in the export)
+  // constructor reference must resolve in the export).
+  // The udapp dropdown follows the CURRENT FILE, and the card does not import
+  // the pavilion — open PeachPavilion.sol and recompile so it appears.
+  await page.locator('#icon-panel div[plugin="filePanel"]').click()
+  await page.waitForTimeout(800)
+  const pavFile = page.locator('[data-id="treeViewLitreeViewItemcontracts/PeachPavilion.sol"]')
+  if (!await pavFile.isVisible().catch(() => false)) {
+    await page.locator('[data-id="treeViewLitreeViewItemcontracts"]').click()
+    await page.waitForTimeout(1000)
+  }
+  await pavFile.click()
+  await page.waitForTimeout(800)
+  await page.locator('#icon-panel div[plugin="solidity"]').click()
+  await page.waitForTimeout(800)
+  await page.locator('[data-id="compilerContainerCompileBtn"]').click()
+  await page.waitForTimeout(4000)
+  await page.locator('#icon-panel div[plugin="udapp"]').click()
+  await page.waitForTimeout(1000)
   await page.locator('#runTabView select[class^="contractNames"]').selectOption('PeachPavilion')
   const ctorInput = page.locator('#runTabView div[class*="contractActionsContainer"] input').first()
   await ctorInput.fill(cardAddr)
@@ -177,10 +212,8 @@ const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
   const instances = page.locator('.instance')
   if (await instances.count() < 2) { note('pavilion instance did not appear'); throw new Error('pavilion') }
   const pavInstance = instances.nth(1)
-  const pavAddr = await pavInstance.evaluate((el) => {
-    const m = el.textContent.match(/at (0x[0-9a-fA-F]{40})/i)
-    return m ? m[1] : ''
-  })
+  const pavAddr = await pavInstance.evaluate(extractAddr)
+  if (pavAddr.startsWith('NOMATCH')) { note('could not extract pavilion address — ' + pavAddr); throw new Error('pavAddr') }
   log('deployed PeachPavilion at ' + pavAddr.slice(0, 12) + '…')
 
   // ---------------- THE REVERT (records step 4): bare safeTransferFrom to the
@@ -216,24 +249,65 @@ const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
   const owner2 = rowIn(cardInstance, 'ownerOf')
   await owner2.locator('input').first().fill('2')
   await owner2.locator('button').first().click()
-  await page.waitForTimeout(1200)
-  const ownTxt = (await cardInstance.innerText()).replace(/\s+/g, ' ')
-  if (ownTxt.toLowerCase().includes(acctB.toLowerCase().slice(2))) log('safeTransferFrom(A, B, 2) landed — ownerOf(2) == B')
-  else note('ownerOf(2) readback unexpected: ' + ownTxt.slice(-160))
+  await page.waitForTimeout(1500)
+  // the decoded call output lands in a value node under the ownerOf row
+  const ownOut = (await owner2.evaluate((el) => el.textContent).catch(() => '')).replace(/\s+/g, ' ')
+  const bTail = acctB.toLowerCase().replace(/^0x/, '')
+  if (ownOut.toLowerCase().includes(bTail)) log('safeTransferFrom(A, B, 2) landed — ownerOf(2) == B')
+  else note('ownerOf(2) readback not confirmed in UI (non-fatal; transfer tx did not revert): ' + ownOut.slice(-160))
   await page.screenshot({ path: SCRATCH + '/p9a-after-flow.png' })
 
   // ---------------- save scenario, verify the failed stamp
+  const recCount = await page.locator('[title="The number of recorded transactions"]').innerText().catch(() => '?')
+  log('recorder count before save: ' + recCount)
+  // clear any stale scenario.json so an empty/old file cannot masquerade as
+  // this run's save
+  await page.evaluate((ws) => { try { window.remixFileSystem.unlinkSync(`.workspaces/${ws}/contracts/scenario.json`) } catch (e) {} }, WS)
   const recorderCard = page.locator('div[class*="cardContainer"]').filter({ hasText: 'Transactions recorded' })
-  await recorderCard.locator('i[class*="arrow"]').first().click()
+  // expand only if the save icon is not already visible (re-clicking the arrow
+  // would TOGGLE the card shut — the panel-toggle gotcha)
+  if (!await page.locator('i.savetransaction').isVisible().catch(() => false)) {
+    await recorderCard.locator('i[class*="arrow"]').first().click()
+    await page.waitForTimeout(500)
+  }
   await page.locator('i.savetransaction').click()
   const okBtn = page.locator('#modal-footer-ok')
   await okBtn.waitFor({ timeout: 10_000 })
   await okBtn.click()
-  await page.locator('remix-tab[id$="scenario.json"]').waitFor({ timeout: 20_000 })
-  const scenarioRaw = await page.evaluate((ws) => {
-    try { return window.remixFileSystem.readFileSync(`.workspaces/${ws}/contracts/scenario.json`, 'utf8') } catch (e) { return '' }
-  }, WS)
-  if (!scenarioRaw) { note('scenario.json not found at contracts/scenario.json'); throw new Error('scenario') }
+  await page.waitForTimeout(2500)
+  // don't depend on the auto-opened tab (its id/visibility varies with the
+  // active side panel) — poll the filesystem directly. The scenario lands in
+  // the CURRENT file's directory (fileManager.currentPath()); the current
+  // file is PeachPavilion.sol, so that is contracts/.
+  // Read TWO sources of truth: the editor buffer of the auto-opened tab (what
+  // the save actually produced, straight from the file manager) and the
+  // BrowserFS bytes. Comparing them separates "wrote empty" from a read
+  // artifact — prior drivers only checked the tab EXISTED, never its bytes.
+  await page.waitForTimeout(2000)
+  const editorBuf = await page.evaluate(() => {
+    const el = document.getElementById('input')
+    return el && el.editor ? el.editor.getSession().getValue() : ''
+  })
+  let fsRaw = ''
+  for (let i = 0; i < 15; i++) {
+    const probe = await page.evaluate((ws) => {
+      const fsx = window.remixFileSystem
+      for (const p of [`.workspaces/${ws}/contracts/scenario.json`, `.workspaces/${ws}/scenario.json`]) {
+        try { const c = fsx.readFileSync(p, 'utf8'); return { path: p, len: c ? c.length : 0, content: c || '' } } catch (e) {}
+      }
+      return { path: null, len: -1, content: '' }
+    }, WS)
+    if (probe.len > 0) { fsRaw = probe.content; log(`scenario.json (BrowserFS) at ${probe.path}, ${probe.len} bytes`); break }
+    await page.waitForTimeout(1000)
+  }
+  log(`editor buffer of scenario tab: ${editorBuf.length} bytes`)
+  const scenarioRaw = fsRaw || editorBuf
+  if (!scenarioRaw) {
+    note(`REAL FINDING candidate: recorder count=${recCount} but BOTH editor buffer AND BrowserFS scenario.json are EMPTY after save — silent empty write`)
+    fs.writeFileSync(SCRATCH + '/p9a-empty-save-evidence.txt', `recorderCount=${recCount}\neditorBuf.length=${editorBuf.length}\nfsRaw.length=${fsRaw.length}\n`)
+    throw new Error('scenario-empty')
+  }
+  if (editorBuf.length > 0 && fsRaw.length === 0) note('scenario tab shows content but BrowserFS reads empty — read-path artifact, not a save bug')
   const scenario = JSON.parse(scenarioRaw)
   const txs = scenario.transactions || []
   const failedSteps = txs.filter((t) => t.record && t.record.failed === true)

@@ -7,9 +7,11 @@
   not to a completed audit. Do not custody meaningful value on unaudited
   deployments.
 - The live Nile instances are **testnet** deployments. The current
-  `TYK5P6bU…` (v3) instance runs the hardened build — TRC-165, safe
-  transfers and the two-step handover ABI were verified on chain right
-  after deployment; `TEzyMokX…` (v2) and `TBig1iST…` (v1) are historical.
+  `TDQ9k3oq…` (v5) instance runs the hardened build plus the on-chain SVG
+  renderer (`TAsJa3bb…`, unsealed) — standards surface, two-step handover
+  and all three genesis `tokenURI`s were verified on chain through public
+  nodes right after deployment; v4/v3/v2/v1 are historical (see
+  deployments/nile.md, including the honest v4 incident notes).
 
 ## Engineering posture
 

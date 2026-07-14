@@ -26,12 +26,15 @@ contract CardRenderer is IRenderer {
     string private constant _MUTED = "#9aa3ad";
 
     function imageURI(Card memory card, uint256 tokenId) external pure override returns (string memory) {
+        // shared text attributes live on one <g> — smaller markup means less
+        // to encode and copy on the hot tokenURI path
         bytes memory svg = abi.encodePacked(
             _frame(card),
+            '<g font-family="sans-serif">',
             _header(card),
             _stats(card),
             _footer(card, tokenId),
-            "</svg>"
+            "</g></svg>"
         );
         return string(abi.encodePacked("data:image/svg+xml;base64,", Base64.encode(svg)));
     }
@@ -55,12 +58,12 @@ contract CardRenderer is IRenderer {
 
     function _header(Card memory card) private pure returns (bytes memory) {
         bytes memory name = abi.encodePacked(
-            '<text x="150" y="64" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="', _INK, '">',
+            '<text x="150" y="64" text-anchor="middle" font-size="24" font-weight="bold" fill="', _INK, '">',
             Str.escapeXml(card.general),
             "</text>"
         );
         bytes memory caption = abi.encodePacked(
-            '<text x="150" y="92" text-anchor="middle" font-family="sans-serif" font-size="13" letter-spacing="2" fill="', _factionColor(card.faction), '">',
+            '<text x="150" y="92" text-anchor="middle" font-size="13" letter-spacing="2" fill="', _factionColor(card.faction), '">',
             CardCodec.factionName(card.faction), unicode" · ", CardCodec.rarityName(card.rarity),
             "</text>"
         );
@@ -85,13 +88,13 @@ contract CardRenderer is IRenderer {
     function _statBar(string memory label, uint8 value, uint256 y, string memory color) private pure returns (bytes memory) {
         string memory yMid = (y + 13).toString();
         bytes memory row = abi.encodePacked(
-            '<text x="34" y="', yMid, '" font-family="sans-serif" font-size="12" fill="', _MUTED, '">', label, "</text>",
+            '<text x="34" y="', yMid, '" font-size="12" fill="', _MUTED, '">', label, "</text>",
             '<rect x="76" y="', y.toString(), '" width="190" height="16" rx="8" fill="', _PANEL, '"/>'
         );
         return abi.encodePacked(
             row,
             _statFill(value, y, color),
-            '<text x="286" y="', yMid, '" text-anchor="end" font-family="sans-serif" font-size="12" fill="', _INK, '">', uint256(value).toString(), "</text>"
+            '<text x="286" y="', yMid, '" text-anchor="end" font-size="12" fill="', _INK, '">', uint256(value).toString(), "</text>"
         );
     }
 
@@ -107,7 +110,7 @@ contract CardRenderer is IRenderer {
     function _footer(Card memory card, uint256 tokenId) private pure returns (bytes memory) {
         return abi.encodePacked(
             '<line x1="30" x2="270" y1="360" y2="360" stroke="#2a303b"/>',
-            '<text x="150" y="388" text-anchor="middle" font-family="sans-serif" font-size="12" fill="', _MUTED, '">',
+            '<text x="150" y="388" text-anchor="middle" font-size="12" fill="', _MUTED, '">',
             Str.escapeXml(card.series), unicode" · #", tokenId.toString(),
             "</text>"
         );

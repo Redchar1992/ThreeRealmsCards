@@ -36,7 +36,7 @@ contracts/
 │   ├── render/CardRenderer.sol 丹青 — the card face as pure on-chain SVG
 │   ├── types/CardTypes.sol     file-level enums, Card struct, free fns, global using-for
 │   ├── libs/CardCodec.sol      Card → data:application/json;base64 (JSON-escaped)
-│   ├── libs/Base64.sol         loop-based encoder, no assembly
+│   ├── libs/Base64.sol         assembly encoder (public-node CPU caps forced it — see docs)
 │   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
 ├── PeachPavilion.sol           gift escrow: deposit a card for an heir to claim;
 │                               rejects naked safeTransferFrom deliveries
@@ -47,11 +47,13 @@ contracts/
 
 | Version | Contract | Address | Notes |
 |---|---|---|---|
-| **v3 (current)** | `ThreeRealmsCards` (hardened, 11 files) | [`TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | genesis minted; `supportsInterface(0x80ac58cd)` + two-step ownership ABI verified on chain |
-| v2 (historical) | `ThreeRealmsCards` (modular, 9 files) | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | first modular deploy; `cardKeyOf` (global using-for) verified on chain |
-| v1 (historical) | `ThreeRealmsCards` (single file) | [`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | first campaign deploy |
+| **v5 (current)** | `ThreeRealmsCards` + `CardRenderer` | [`TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X`](https://nile.tronscan.org/#/contract/TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X) · [`TAsJa3bb…`](https://nile.tronscan.org/#/contract/TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ) | on-chain SVG art live; all three genesis `tokenURI`s readable through public nodes |
+| v4 (historical) | first renderer deploy | [`THRSFpEV…`](https://nile.tronscan.org/#/contract/THRSFpEVownGtVx7WjdzYbbvqbTsD3iywJ) | renderer accidentally sealed by a driver bug; 4.07M-gas tokenURI refused by public nodes (`OutOfTimeException`) — both documented |
+| v3 (historical) | hardened, 11 files | [`TYK5P6bU…`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | `supportsInterface` + two-step ownership verified on chain |
+| v2 (historical) | modular, 9 files | [`TEzyMokX…`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | `cardKeyOf` (global using-for) verified on chain |
+| v1 (historical) | single file | [`TBig1iST…`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | first campaign deploy |
 
-Transactions, deployer, energy numbers and verification materials: [deployments/nile.md](deployments/nile.md).
+Transactions, deployer, energy numbers, the honest incident notes and verification materials: [deployments/nile.md](deployments/nile.md).
 
 ## Quickstart
 

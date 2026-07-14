@@ -123,3 +123,19 @@
 - **J-014(观察,UI 提示面待复核)**:默认 fee limit 400,000,000 sun 对加固版部署不足——首次尝试 `OUT_OF_ENERGY` 上链失败(tx `7876ad49…`,`energy_usage_total` 恰好 4,000,000,与 Nile 100 sun/energy 换算吻合;白付 23.885 TRX 手续费),实需 4,260,454。较大合约的用户会撞同一堵墙。建议:部署前按字节码估算能量、fee limit 不足时预警;`OUT_OF_ENERGY` 失败后给出"上调 fee limit"引导。(本轮驱动脚本未截获 IDE 终端对该失败的提示样式,正式提缺陷前需复核——J-013 的教训。)
 - **驱动教训 ×2**(非产品缺陷):①直接写 BrowserFS 后立即 reload 会撞 J-005 惰性落盘竞态,首跑成功第二跑树空——改为"内容比对、幂等写入、无变更不 reload"后根除;②udapp 环境切换可能静默回落 JS VM,`0x5B38…` 假账户能骗过"非空"断言——账户校验必须认 T 地址格式。
 - **TronLink 弹窗自动确认可行**:CDP 上下文能枚举并点击扩展弹窗完成签名(仅限脚本自己刚发起的测试网交易);首次确认把站点加入白名单后,后续交易静默签名,连弹窗都不再出现。
+
+## 2026-07-14 · P10/P11:链上 SVG 渲染层 —— 两次部署与三个教训
+
+**渲染层落地**(commit `1f2197a`):`CardRenderer`(丹青)纯 Solidity 画 SVG 卡面(阵营配色/稀有度星级/四维条/LEGEND 光环),经 `IRenderer` 挂进核心,`setRenderer`/`sealRenderer`(单向封印),tokenURI try/catch 优雅降级 + 渲染器输出 JSON 转义防注入;`Str.escapeXml`(实体化 + 控制字符剥离);测试 54→71,覆盖率保持全 100%。
+
+**P10(v4,`THRSFpEV…` + `TCPVf7pG…`)——发现三连**:
+
+1. **编译作用域**:IDE 编译的是**当前打开文件**的依赖图;核心按设计不 import 渲染器 → `CardRenderer` 不在部署下拉框。驱动必须"打开渲染器文件→重编译→再部署"(p10 卡死于此,p10b 补上)。
+2. **误封印事故(P10 最贵一课)**:p10b 读回循环用子串匹配选实例行,`renderer` 命中 `sealRenderer`,弹窗自动确认器把它签了——**v4 渲染器被无意永久封印**(链上可见后续 4 笔 `RendererSealed` revert)。测试网无损,主网即事故。根修:实例行选择器改**精确匹配**(p11 起);教训:**模糊选择器 + 自动签名 = 不可逆链上变更**。
+3. **J-015(链侧观察,公共节点硬约束)**:v4 的 tokenURI(SVG + 双层逐字节 base64)实测 **4.07M gas**,TronGrid 公共节点常量调用直接 `OutOfTimeException` 拒读——钱包/市场经公共节点将看不到元数据。**"全链上美术"必须把 tokenURI 塞进公共节点的 CPU 预算**,这是路线级约束,不是实现细节。
+
+**性能修复**(assembly Base64 + SVG 标记瘦身):tokenURI 4.07M → **1.46M gas(-64%)**,imageURI 1.27M → 0.26M;差分测试(RFC 向量 + 种子随机 vs Node 编码器)跨换血全绿——差分安全网正是为这种"重写热点"时刻准备的。原循环版编码器留在 git 历史。
+
+**P11(v5,当前:`TDQ9k3oq…` + 渲染器 `TAsJa3bb…`,未封印)**:途中再踩两坑——webpack 遮罩 iframe 在 reload 后复活拦截点击(修:每步点击前 deOverlay + force 点击),HMR 整页重载洗掉实例面板(修:**At Address** 把已上链实例挂回,免重部署)。终态链上验证:`renderer()` 精确匹配、`rendererSealed=false`、创世三卡 **tokenURI 全部经公共节点读出**(SVG 各 ~2.1KB,五星 LEGEND 卡面完整)。
+
+**驱动纪律沉淀**(p11/p11b 已固化):精确匹配行选择器、deOverlay 常态化、编译产物按内容轮询(J-013 姿势)、幂等工作区写入(J-005 姿势)、At Address 恢复路径、封印类不可逆操作一律不自动化。
