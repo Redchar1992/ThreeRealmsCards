@@ -161,3 +161,9 @@ study** — it exists to stress a specific part of the toolchain. Do not
   construct used here); energy accounting, TronLink signing and TronScan
   verification are validated through the IDE scenario replays and the
   TronBox export instead.
+- Foundry is the second verification stack: `test/invariant/` holds a
+  guarded ecosystem handler (twelve ops including time warps, never
+  reverting on purpose) fuzzed under `fail_on_revert` strict mode, with
+  five invariants checked after every op. The harness base (`ForgeLite`)
+  is written in-repo — the stale npm mirror and a forty-file submodule
+  both lost to sixty lines of the subset we actually use.

@@ -9,6 +9,7 @@ help keep it that way.
 npm install        # node >= 20
 npm test           # 120 specs, ~3s
 npm run coverage   # must stay at 100% — CI enforces it
+forge test         # invariant campaign (optional locally; CI runs it)
 ```
 
 No local TRON node is needed: the Hardhat suite is a logic-regression layer

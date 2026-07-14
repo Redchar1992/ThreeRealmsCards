@@ -25,6 +25,12 @@ jobs:
       - name: Test
         run: npx hardhat test
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Invariant campaign (forge, fail_on_revert strict)
+        run: forge test -vv
+
       - name: Coverage (must stay at 100%)
         run: |
           npx hardhat coverage

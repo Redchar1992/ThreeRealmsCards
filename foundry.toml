@@ -1,0 +1,20 @@
+# Foundry side of the dual verification stack. Hardhat owns logic regression
+# and coverage; forge owns the stateful invariant campaign. Artifacts are
+# kept apart from hardhat's (out-forge / cache-forge).
+[profile.default]
+src = "contracts"
+test = "test"
+out = "out-forge"
+cache_path = "cache-forge"
+libs = []
+solc_version = "0.8.20"
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+
+[invariant]
+runs = 64
+depth = 128
+# the handler is fully guarded (pre-checks, never reverts on purpose), so ANY
+# revert inside a fuzzed sequence is a finding — strictest mode
+fail_on_revert = true

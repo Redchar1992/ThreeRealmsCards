@@ -6,3 +6,7 @@ artifacts/
 cache/
 coverage/
 coverage.json
+
+# foundry
+out-forge/
+cache-forge/

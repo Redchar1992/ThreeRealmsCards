@@ -25,9 +25,12 @@
   blobs; `escapeJson` output must `JSON.parse` back to the original string;
   `escapeXml` is compared against a reference implementation and every
   rendered SVG must pass an XML well-formedness check.
-- Invariant testing: a seeded random mint/transfer storm re-derives the full
-  ownership ledger and reconciles it against `ownerOf`/`balanceOf`/
-  `totalMinted`.
+- Invariant testing, dual-stack: a seeded random storm in the Hardhat suite,
+  plus a Foundry campaign — 64 fuzzed sequences × 128 guarded ecosystem ops
+  (mints, trades, gifts, time warps) under `fail_on_revert` strict mode,
+  holding card conservation, bazaar solvency (`balance == Σ proceeds`),
+  ghost-ledger accounting, no-stranded-custody, and throne stability after
+  every single op.
 - Zero external Solidity dependencies — the audit surface is exactly this
   repository.
 - Checks-effects-interactions: `safeTransferFrom` settles all state before

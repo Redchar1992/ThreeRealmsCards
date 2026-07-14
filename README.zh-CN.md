@@ -18,7 +18,7 @@
 - **故意刁钻的 Solidity**：文件级类型与自由函数、`global` using-for、别名命名导入、同文件双路径导入陷阱、public 状态变量覆写接口函数、`unchecked`、assembly 守卫、reverting `receive`/`fallback`——每一处都是为了压测编译器、拍平器、UML、linter 与分析器而放置，并注明了 *为什么*。详见 [docs/architecture.md](docs/architecture.md)。
 - **签名驱动的 lazy mint（虎符 TigerTally）**：虎符合约受让 suzerainty 出任"在任铸造官"——两步移交的存在意义正是让**合约**能安全持有王座——并兑现 EIP-712 `MintOrder`：嵌套结构体哈希（订单内嵌完整 `Card`）、不记名/定向 + 代付两种券模式、可作废 nonce、防延展 `ecrecover`、全部 suzerain 权能的元帅直通道与王座归还逃生门。链上 digest 在测试中与 ethers `TypedDataEncoder` 差分锚定。
 - **用最无聊的方式处理真金白银（市集 CardBazaar）**：固定价、TRX 结算的摊位市场，挂单入柜托管 + **pull-payment 提款**——若采用内联打款，任何 `receive()` 回滚的卖家都能卡死自己挂单的成交。`withdraw()` 走 checks-effects-interactions，由一个在收款瞬间尝试重入抽干的恶意卖家实证：它只看到已清零的账本。无 owner、无手续费、无 sweep：信任模型里市集的管理员一栏写着 *nobody*。
-- **120 个测试、100% 覆盖率、CI 闸门**：语句 / 分支 / 函数 / 行全部 100%（mocks 除外），回退即 CI 失败。含链上 Base64 / 十进制 / JSON 转义 / XML 转义对参考实现的差分测试、每张 SVG 的 XML 良构校验、safe transfer 受体行为矩阵、种子随机转账风暴对账。
+- **验证双栈、CI 闸门**：Hardhat 侧 120 用例、语句/分支/函数/行 100% 覆盖，所有链上编解码器（Base64、十进制、JSON/XML 转义、EIP-712 digest）对参考实现差分；Foundry 侧 stateful 不变量战役——64 条模糊序列 × 128 个守卫生态操作（铸造、交易、赠礼、**时间跳跃**），`fail_on_revert` 严格模式——证明卡守恒、市集偿付、账本恒等，以及**托管合约在一切可达序列下都不可能卡死一张卡**。forge 测试基座（`ForgeLite`）为仓库自写：零外部依赖延伸到测试底座本身。
 - **真实的 dogfooding 战役、诚实的账本**：从脚手架、编辑、lint、编译，到 VM 部署、调试、录制回放、TronBox 导出、git 推送、TronLink 实链部署、拍平与验证包——全程在 TronIDE 内完成，走遍 23 项 IDE 功能，提交 13 条发现：6 条修复入库（带回归门禁）、**3 条经严格复验后诚实撤回**（自己的误判也记账）。详见 [docs/case-study.md](docs/case-study.md)。
 
 > **审计状态**：按审计级实践工程化，**尚未经外部审计**。托管真实价值前请先读 [SECURITY.md](SECURITY.md)。
@@ -67,6 +67,7 @@ contracts/
 npm install
 npm test              # 120 个用例，约 3 秒，无需本地 TRON 节点
 npm run coverage      # istanbul 报告；CI 强制 100%
+forge test            # 不变量战役：64×128 守卫操作、5 条不变量
 npx hardhat compile   # solc 0.8.20，evm target paris（不让 PUSH0 跑在 TVM 前面）
 ```
 
