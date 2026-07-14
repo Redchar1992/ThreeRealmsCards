@@ -1,0 +1,17 @@
+{
+  "name": "three-realms-cards",
+  "version": "0.2.0",
+  "private": true,
+  "description": "三分天下 · Three Realms Cards — TRC-721 general cards + Hardhat logic-regression harness",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "chai": "^4.5.0",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.26.0"
+  }
+}

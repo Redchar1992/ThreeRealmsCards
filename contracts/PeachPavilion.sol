@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { ITRC721 } from "./interfaces/ITRC721.sol";
+import { ITRC721Receiver } from "./interfaces/ITRC721Receiver.sol";
 // Deliberately devious: this resolves to the SAME file as "./types/CardTypes.sol"
 // but through a different path string (up and back down). Path normalization in
 // the import resolver and the flattener's dedup both get tested here.
@@ -10,12 +11,13 @@ import { Card } from "../contracts/types/CardTypes.sol";
 /// @title 桃园馆 — gift escrow: deposit a card for a designated heir, the heir
 /// claims it. try/catch over an external interface call, reverting receive AND
 /// fallback, immutable interface reference, custom errors.
-contract PeachPavilion {
+contract PeachPavilion is ITRC721Receiver {
     error NotCardHolder(address caller, uint256 tokenId);
     error NothingDeposited(uint256 tokenId);
     error NotDesignatedHeir(address caller, uint256 tokenId);
     error PavilionTakesNoTribute();
     error CardContractRejected(uint256 tokenId, string reason);
+    error GiftsOnlyViaDeposit();
 
     event GiftDeposited(uint256 indexed tokenId, address indexed from, address indexed heir);
     event GiftClaimed(uint256 indexed tokenId, address indexed heir);
@@ -31,6 +33,12 @@ contract PeachPavilion {
     receive() external payable { revert PavilionTakesNoTribute(); }
 
     fallback() external payable { revert PavilionTakesNoTribute(); }
+
+    /// @notice Reject naked safeTransferFrom deliveries: a card that arrived
+    /// without depositGift bookkeeping would have no heir and be stuck forever.
+    function onTRC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+        revert GiftsOnlyViaDeposit();
+    }
 
     function depositGift(uint256 tokenId, address heir) external {
         address holder;

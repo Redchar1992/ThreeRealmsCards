@@ -35,10 +35,12 @@ library CardCodec {
             '},{"trait_type":"Command","value":', uint256(card.command).toString(),
             '},{"trait_type":"Charisma","value":', uint256(card.charisma).toString(), '}]'
         );
+        // user-supplied strings are JSON-escaped — a quote in a general's
+        // name must not break every wallet that parses the metadata
         bytes memory json = abi.encodePacked(
-            '{"name":"', card.general, ' #', tokenId.toString(),
+            '{"name":"', S.escapeJson(card.general), ' #', tokenId.toString(),
             '","description":"Three Realms Cards - a Three Kingdoms general card of the ',
-            card.series, ' series.","attributes":', attrs, '}'
+            S.escapeJson(card.series), ' series.","attributes":', attrs, '}'
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(json)));
     }

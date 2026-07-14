@@ -19,6 +19,7 @@
 - 合约 `ThreeRealmsCards`:从 TronIDE `trc721-minimal` 模板起步(自包含 TRC-721 核心面,浏览器可编译),逐步扩展属性存储、分系列 mint、tokenURI。
 - 开发主战场:TronIDE(dev build,workspace `three-realms`,持久浏览器 profile 在 `../.tronide-profile`)。
 - 本仓库是规范镜像:IDE 工作区的合约/脚本定期同步至此;`docs/` 记录 dogfooding 进展。
+- 逻辑回归测试:`npm install && npm test`(Hardhat + ethers,solc 0.8.20 / evm paris,与 Nile 部署编译器一致)。覆盖 TRC-721 标准一致性、两步主公移交、safe transfer 回调、tokenURI JSON 转义、Base64/toString 差分、账本不变量;链上集成验证仍走 IDE 场景 + TronBox 导出。
 
 ## 阶段
 
