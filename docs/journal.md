@@ -103,5 +103,11 @@
 
 - **J-011 ✅ 当场修复**(tron-remix `b3a841d05`):linter 对**文件级自由函数**误报 func-visibility(自由函数不允许写可见性)——SourceUnit 直属函数豁免;TC-LINT-008 @gate 双向钉死。
 - **J-012(增强项)**:VM 终端对**自定义错误不按名解码**(`NotDesignatedHeir` 只显示原始 revert)——ABI 在手,可解码;require 字符串时代的遗留,建议 v2.3.3 补。
-- **J-013(严重,待修)**:**编译器版本不满足 pragma 时完全静默失败**——0.8.6 编 `^0.8.20`:无报错面板、无编辑器标注、还展示上一轮的陈旧产物。两个独立探针互证。属本仓库"静默失败"系统性整改的漏网,优先修复。
-- 观察 ×3(驱动/UX):Flatten 跟随**最后一次编译**的合约而非当前文件(无提示);实例标题被 CSS 大写化且无 data-id 携带地址(自动化要走 recorder 地址簿);编译产物面板在新一轮编译失败时**不清空旧内容**(与 J-013 复合放大误导)。
+- **J-013 → 完全撤回(第三次诚实撤回)**:严格复验证伪两个子claim。①"版本不匹配静默失败":0.8.6 是远程大文件,本机下载没完成,实际用已加载的 0.8.27 正常编译成功——加载失败路径本就有处理(按钮禁用+图标 "compiler load failed" 标题+autoFallbackToBuiltin 横幅,已被 TC-CMP-VER-006/007 覆盖);之前只等 4 秒是探针假象。②"编译失败不清旧产物":制造真语法错误后合约下拉框清空、Compilation Details 消失、错误正常显示——P6 看到的"陈旧"只是两次成功编译间的轮询时序。**教训:J-001/J-007/J-013 三次撤回都源于探针过度解读;"先严格验证再定论"是这套 dogfooding 的核心纪律**。
+- 观察 ×2(驱动/UX,非缺陷):Flatten 跟随**最后一次编译**的合约而非当前文件(无提示,可加);实例标题被 CSS 大写化且无 data-id 携带地址(自动化要走 recorder 地址簿)。
+
+## 2026-07-14 · 新架构上 Nile
+
+**做了什么**:9 文件架构直接写入轻量工作区 `three-realms-v2`(15KB 纯文本,避开 J-009 的 PNG 撑爆问题)→ 0.8.20 builtin 编译整依赖图 → Injected TronWeb 部署 → **新 `ThreeRealmsCards` 上链 Nile: `TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`** → 创世 mint 上链。链上直查确认:`genesisSealed=true / totalMinted=3 / balanceOf=3`;`tokenURI(2)` 解码 = Guan Yu #2 / SHU(库 base64 管线真链可用);**`cardKeyOf(1)=0xaef847e7…` — global using-for 在真链上生效**。详见 `deployments/nile.md`(v2)。
+
+**过程小结**:部署+创世两笔真实签名成功;点击遮罩(webpack overlay)拦了一次读回重试,但交易早已上链,改用 TronWeb 直查链上状态确认——**读链比读 UI 更可靠**。PeachPavilion 托管需第二个 Nile 账户,真链未部署,VM 已全验。至此三分天下从单合约演进到模块化架构并两度上链,dogfooding 战役全部收官。

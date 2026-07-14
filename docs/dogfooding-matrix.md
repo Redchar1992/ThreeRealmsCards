@@ -22,7 +22,7 @@
 | 16 | Git 面板(init/branch/commit) | P3 | ✅ | 自动 init、快照 commit、ide-workspace 分支 |
 | 17 | GitHub OAuth/token + push | P3 | ✅ | PAT 内存连接 + 经代理真实 push(CI 未覆盖面) |
 | 18 | git clone(经 CORS 代理) | P3 | ✅ | 公开仓库克隆回新工作区 |
-| 19 | TronLink 实链部署(Nile) | P4 | ✅ | TBig1iST…gb18V 上链;签名时效观察 |
+| 19 | TronLink 实链部署(Nile) | P4 | ✅ | v1 TBig1iST…、v2 TEzyMokX…(模块化架构)两度上链 |
 | 20 | Flatten + Contract Verification | P4 | ✅ | 验证包 Nile 已生成;Check status 链路通 |
 | 21 | Export/Restore Zip 备份 | P5 | ◐ | 导出 ✓(107 文件离线验证);恢复 = J-010 |
 | 22 | 全局搜索/替换 | P1+ | ✅ | 跨工作区命中合约 |
