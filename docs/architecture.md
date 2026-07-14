@@ -45,7 +45,7 @@ stress fixture for Solidity toolchains (see [the spiky inventory](#the-spiky-con
 | `libs/CardCodec.sol` | `Card → data:application/json;base64` | escapes user strings; aliased import `Str as S` |
 | `libs/Base64.sol` | assembly Base64 encoder | was a byte loop until P10: the 4.07M-gas double-encoded tokenURI hit public nodes' constant-call CPU cap (`OutOfTimeException`); now 1.46M. Differential-tested vs Node across the swap |
 | `utils/StrUtils.sol` | `toString`, `equal`, `escapeJson` | escape: `"` `\` → backslashed, `< 0x20` → `\u00XX`, UTF-8 passthrough |
-| `PeachPavilion.sol` | escrow: deposit card for heir, heir claims | rejects naked `safeTransferFrom` deliveries |
+| `PeachPavilion.sol` | gift escrow with claim windows (v2): heir claims while `now <= claimBy`, giver reclaims after — gapless, overlap-free boundary | rejects naked deliveries; rejects heirless gifts (the v1 stuck-card trap) |
 | `TigerTally.sol` | 虎符 — EIP-712 signed mint orders (lazy minting); holds the suzerainty while in service | zero-dep nested-struct 712, low-s `ecrecover`, marshal passthroughs for the full suzerain surface |
 | `CardBazaar.sol` | 市集 — fixed-price stalls, TRX-settled, escrowed listings | pull-payment proceeds (CEI, reentrancy-tested), `call{value:}` over `.transfer`, zero governance surface |
 | `mocks/TestMocks.sol` | receiver mocks, lib harness, abstract-base shims | **never deploy** |

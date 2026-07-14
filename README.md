@@ -18,7 +18,7 @@ Three Kingdoms general cards: four factions (WEI / SHU / WU / QUN), five raritie
 - **Deliberately spiky Solidity.** File-level types and free functions, a `global` using-for, aliased named imports, a same-file-two-paths import trap, a public-state-var overriding an interface function, `unchecked` blocks, an assembly guard, reverting `receive`/`fallback` — each one placed on purpose to stress compilers, flatteners, UML generators, linters and analyzers, and annotated with *why*. See [docs/architecture.md](docs/architecture.md).
 - **Signature-driven lazy minting (虎符 TigerTally).** A tally contract takes the suzerainty — the two-step handover exists precisely so a *contract* can hold the throne safely — and redeems EIP-712 `MintOrder`s: nested-struct hashing (the order wraps a full `Card`), bearer and bound-with-relayer voucher modes, voidable nonces, malleability-guarded `ecrecover`, and a marshal-gated passthrough for every suzerain power including the escape hatch back. The on-chain digest is differentially anchored to ethers' `TypedDataEncoder` in tests.
 - **Real value handled the boring way (市集 CardBazaar).** A fixed-price, TRX-settled stall market with escrowed listings and **pull-payment proceeds** — paying sellers inline would let any seller with a reverting `receive()` brick their own listing's purchase. `withdraw()` is checks-effects-interactions, proven by a hostile seller that attempts a reentrant drain mid-payout and finds an already-zeroed ledger. No owner, no fees, no sweep: the bazaar's admin column in the trust model reads *nobody*.
-- **111 tests, 100% coverage, gated in CI.** Statements, branches, functions and lines all at 100% (mocks excluded); the CI fails if any of it regresses. Includes differential tests of the on-chain Base64/decimal/JSON-escape/XML-escape helpers against reference implementations, XML well-formedness checks on every rendered SVG, a receiver-behavior matrix, and a seeded random transfer storm checked against a model.
+- **120 tests, 100% coverage, gated in CI.** Statements, branches, functions and lines all at 100% (mocks excluded); the CI fails if any of it regresses. Includes differential tests of the on-chain Base64/decimal/JSON-escape/XML-escape helpers against reference implementations, XML well-formedness checks on every rendered SVG, a receiver-behavior matrix, and a seeded random transfer storm checked against a model.
 - **A real dogfooding campaign, honestly kept.** The entire project — scaffold, edit, lint, compile, VM deploy, debug, record/replay, TronBox export, git push, TronLink mainnet-style deploys, flatten & verification — was executed **inside TronIDE**, driving 23 IDE features and filing 13 findings, of which 6 were fixed upstream with regression gates and **3 were retracted after strict re-verification** (the ledger counts our own misreads too). See [docs/case-study.md](docs/case-study.md).
 
 > **Audit status:** engineered to audit-grade practice, **not yet externally audited**. Read [SECURITY.md](SECURITY.md) before depositing value you care about.
@@ -40,8 +40,8 @@ contracts/
 │   ├── libs/CardCodec.sol      Card → data:application/json;base64 (JSON-escaped)
 │   ├── libs/Base64.sol         assembly encoder (public-node CPU caps forced it — see docs)
 │   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
-├── PeachPavilion.sol           gift escrow: deposit a card for an heir to claim;
-│                               rejects naked safeTransferFrom deliveries
+├── PeachPavilion.sol           gift escrow with claim windows: the heir claims until
+│                               the deadline (boundary inclusive), the giver reclaims after
 ├── TigerTally.sol              虎符 — EIP-712 signed mint orders (lazy minting);
 │                               holds the suzerainty while in service
 ├── CardBazaar.sol              市集 — fixed-price stalls, TRX-settled, escrowed
@@ -65,7 +65,7 @@ Transactions, deployer, energy numbers, the honest incident notes and verificati
 
 ```bash
 npm install
-npm test              # 111 specs, ~3s, no local TRON node needed
+npm test              # 120 specs, ~3s, no local TRON node needed
 npm run coverage      # istanbul report; CI enforces 100%
 npx hardhat compile   # solc 0.8.20, evm target paris (no PUSH0 ahead of the TVM)
 ```

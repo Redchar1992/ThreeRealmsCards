@@ -17,7 +17,7 @@
 
 ## Engineering posture
 
-- 111 Hardhat specs; **100% statement / branch / function / line coverage**
+- 120 Hardhat specs; **100% statement / branch / function / line coverage**
   over every deployable contract (mocks excluded), enforced by a CI gate
   that fails below 100%.
 - Differential tests: the on-chain Base64 and decimal encoders are compared
