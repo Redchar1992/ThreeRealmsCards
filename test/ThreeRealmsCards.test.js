@@ -137,6 +137,17 @@ describe("ThreeRealmsCards", () => {
       expect(await cards.suzerain()).to.equal(bob.address);
     });
 
+    it("the abstract base refuses a zero first lord", async () => {
+      const factory = await ethers.getContractFactory("SuzerainMock");
+      await expect(factory.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        factory,
+        "ZeroSuzerain"
+      );
+      const lord = await factory.deploy(alice.address);
+      expect(await lord.suzerain()).to.equal(alice.address);
+      expect(await lord.enthronedAt()).to.be.greaterThan(0n);
+    });
+
     it("passing address(0) cancels a pending designation", async () => {
       await cards.passSuzerainty(alice.address);
       await cards.passSuzerainty(ethers.ZeroAddress);

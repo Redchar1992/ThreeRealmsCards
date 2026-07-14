@@ -2,16 +2,36 @@
   "name": "three-realms-cards",
   "version": "0.2.0",
   "private": true,
-  "description": "三分天下 · Three Realms Cards — TRC-721 general cards + Hardhat logic-regression harness",
+  "description": "三分天下 · Three Realms Cards — audit-grade, fully on-chain, modular TRC-721 on TRON, built end-to-end inside TronIDE as a dogfooding case study",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Redchar1992/ThreeRealmsCards.git"
+  },
+  "keywords": [
+    "tron",
+    "trc-721",
+    "nft",
+    "solidity",
+    "smart-contracts",
+    "on-chain-metadata",
+    "tronide",
+    "hardhat"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "coverage": "hardhat coverage"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "chai": "^4.5.0",
     "ethers": "^6.15.0",
-    "hardhat": "^2.26.0"
+    "hardhat": "^2.26.0",
+    "solidity-coverage": "^0.8.17"
   }
 }

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile
+        run: npx hardhat compile
+
+      - name: Test
+        run: npx hardhat test
+
+      - name: Coverage (must stay at 100%)
+        run: |
+          npx hardhat coverage
+          node -e '
+            const c = require("./coverage.json");
+            const totals = { s: [0, 0], b: [0, 0], f: [0, 0], l: [0, 0] };
+            for (const file of Object.values(c)) {
+              for (const n of Object.values(file.s)) { totals.s[1]++; if (n > 0) totals.s[0]++; }
+              for (const p of Object.values(file.b)) for (const n of p) { totals.b[1]++; if (n > 0) totals.b[0]++; }
+              for (const n of Object.values(file.f)) { totals.f[1]++; if (n > 0) totals.f[0]++; }
+            }
+            const pct = ([hit, all]) => (all === 0 ? 100 : (100 * hit) / all);
+            const s = pct(totals.s), b = pct(totals.b), f = pct(totals.f);
+            console.log(`statements ${s}% · branches ${b}% · functions ${f}%`);
+            if (s < 100 || b < 100 || f < 100) { console.error("coverage regressed below 100%"); process.exit(1); }
+          '

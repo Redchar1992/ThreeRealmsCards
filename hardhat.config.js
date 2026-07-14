@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-chai-matchers");
+require("solidity-coverage");
 
 /**
  * Logic-regression harness: the contracts compile with upstream solc and run

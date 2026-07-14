@@ -1,33 +1,87 @@
-# 三分天下 · Three Realms Cards
+# Three Realms Cards · 三分天下
 
-三国武将卡牌 NFT,TRON 链 TRC-721。**T**hree **R**ealms **C**ards —— 缩写 TRC,呼应 TRC-721。
+[![CI](https://github.com/Redchar1992/ThreeRealmsCards/actions/workflows/ci.yml/badge.svg)](https://github.com/Redchar1992/ThreeRealmsCards/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Solidity](https://img.shields.io/badge/solidity-0.8.20-363636)
+![Coverage](https://img.shields.io/badge/coverage-100%25_stmts_·_branches_·_funcs_·_lines-brightgreen)
 
-本项目同时是 [TronIDE](https://github.com/tronweb3/TronIDE) 的全功能 dogfooding:每个 IDE 功能都在真实开发流程中使用一遍,发现的问题回流 IDE 缺陷清单(见 `docs/journal.md`)。
+**A fully on-chain, modular TRC-721 on TRON, engineered to audit-grade practice — and a complete, brutally honest dogfooding case study of [TronIDE](https://github.com/tronweb3/TronIDE).**
 
-## 卡牌设计
+English · [简体中文](README.zh-CN.md)
 
-| 维度 | 设计 |
+Three Kingdoms general cards: four factions (WEI / SHU / WU / QUN), five rarities (N → LEGEND), four 0–100 stats, and a one-shot **"Peach Garden" genesis** — Liu Bei, Guan Yu, Zhang Fei as LEGEND 1/1s, sealed forever after one mint. Metadata lives entirely on chain as `data:application/json;base64,…`: no IPFS pin to lapse, no metadata server to die. If the chain is up, the cards are whole.
+
+## Why this repo is worth reading
+
+- **A reference TRC-721, zero dependencies.** The full core + metadata surface — both `safeTransferFrom` overloads with a `try/catch` receiver probe, TRC-165 with compiler-computed `type(X).interfaceId` (no hand-copied magic constants), spec-grade revert semantics on `ownerOf` / `balanceOf` / `getApproved`, two-step ownership handover, custom errors throughout. No OpenZeppelin import: every byte that ends up on chain is in this repo, which makes the whole surface auditable in one sitting.
+- **Fully on-chain metadata done right.** `Card → JSON → Base64 → data:` URI, with user-supplied strings JSON-escaped on chain (`"` `\` and control chars — a quote in a general's name cannot break wallets), multi-byte UTF-8 passing through untouched.
+- **Deliberately spiky Solidity.** File-level types and free functions, a `global` using-for, aliased named imports, a same-file-two-paths import trap, a public-state-var overriding an interface function, `unchecked` blocks, an assembly guard, reverting `receive`/`fallback` — each one placed on purpose to stress compilers, flatteners, UML generators, linters and analyzers, and annotated with *why*. See [docs/architecture.md](docs/architecture.md).
+- **54 tests, 100% coverage, gated in CI.** Statements, branches, functions and lines all at 100% (mocks excluded); the CI fails if any of it regresses. Includes differential tests of the on-chain Base64/decimal encoders against Node's implementations, a receiver-behavior matrix, and a seeded random transfer storm checked against a model.
+- **A real dogfooding campaign, honestly kept.** The entire project — scaffold, edit, lint, compile, VM deploy, debug, record/replay, TronBox export, git push, TronLink mainnet-style deploys, flatten & verification — was executed **inside TronIDE**, driving 23 IDE features and filing 13 findings, of which 6 were fixed upstream with regression gates and **3 were retracted after strict re-verification** (the ledger counts our own misreads too). See [docs/case-study.md](docs/case-study.md).
+
+> **Audit status:** engineered to audit-grade practice, **not yet externally audited**. Read [SECURITY.md](SECURITY.md) before depositing value you care about.
+
+## Contracts
+
+```text
+contracts/
+├── ThreeRealmsCards.sol        the TRC-721 card contract
+│   ├── interfaces/
+│   │   ├── ITRC165.sol         interface detection
+│   │   ├── ITRC721.sol         core surface (is ITRC165) — 9 fns XOR to 0x80ac58cd
+│   │   ├── ITRC721Metadata.sol name / symbol / tokenURI (is ITRC721)
+│   │   └── ITRC721Receiver.sol safe-transfer hook
+│   ├── access/Suzerain.sol     two-step Ownable (主公): designate heir → heir accepts
+│   ├── types/CardTypes.sol     file-level enums, Card struct, free fns, global using-for
+│   ├── libs/CardCodec.sol      Card → data:application/json;base64 (JSON-escaped)
+│   ├── libs/Base64.sol         loop-based encoder, no assembly
+│   └── utils/StrUtils.sol      toString / equal / escapeJson
+├── PeachPavilion.sol           gift escrow: deposit a card for an heir to claim;
+│                               rejects naked safeTransferFrom deliveries
+└── mocks/TestMocks.sol         test doubles only — never deploy
+```
+
+## Live on Nile testnet
+
+| Version | Contract | Address | Notes |
+|---|---|---|---|
+| **v2 (current)** | `ThreeRealmsCards` (modular, 9 files) | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | genesis minted; `cardKeyOf` (global using-for) verified on chain |
+| v1 (historical) | `ThreeRealmsCards` (single file) | [`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | first campaign deploy |
+
+Transactions, deployer and verification materials: [deployments/nile.md](deployments/nile.md). The Nile v2 instance predates the latest hardening round (two-step handover, safe transfers, TRC-165, JSON escaping) — redeploy to pick it up.
+
+## Quickstart
+
+```bash
+npm install
+npm test              # 54 specs, ~1s, no local TRON node needed
+npm run coverage      # istanbul report; CI enforces 100%
+npx hardhat compile   # solc 0.8.20, evm target paris (no PUSH0 ahead of the TVM)
+```
+
+The Hardhat suite is a **logic-regression harness**: upstream solc + an EVM is instruction-equivalent to the TVM for everything this codebase uses, so unit tests run anywhere, fast. On-chain integration (energy model, TronLink signing, TronScan verification) is exercised separately through the TronIDE scenario replays (`scenarios/`) and the TronBox export (`exports/tronbox/`).
+
+## Repository layout
+
+| Path | What it is |
 |---|---|
-| 阵营 | 魏 WEI / 蜀 SHU / 吴 WU / 群 QUN |
-| 稀有度 | N / R / SR / SSR / LEGEND |
-| 四维 | 武力 / 智力 / 统率 / 魅力(0-100) |
-| 创世系列 | 「桃园」— 刘备 / 关羽 / 张飞,各 1/1,owner mint |
-| 元数据 | MVP 用链上 data-URI JSON,后续可切 IPFS |
+| `contracts/` | the production sources (see map above) |
+| `test/` | Hardhat suite — conformance, receiver matrix, differentials, invariants |
+| `docs/architecture.md` | module walkthrough + the annotated "spiky constructs" inventory |
+| `docs/case-study.md` | the TronIDE dogfooding campaign, in English |
+| `docs/journal.md` | full campaign journal (Chinese, primary source) |
+| `docs/dogfooding-matrix.md` | 23-feature coverage matrix |
+| `deployments/nile.md` | live addresses, txids, compiler settings |
+| `scenarios/` | IDE recorder scenario (deploy → genesis → reads), replayable |
+| `exports/` | IDE-generated TronBox project + flattened verification sources |
+| `tools/` | Playwright scripts that drove the IDE for each campaign phase |
 
-## 技术
+## The dogfooding story, in numbers
 
-- 合约 `ThreeRealmsCards`:从 TronIDE `trc721-minimal` 模板起步(自包含 TRC-721 核心面,浏览器可编译),逐步扩展属性存储、分系列 mint、tokenURI。
-- 开发主战场:TronIDE(dev build,workspace `three-realms`,持久浏览器 profile 在 `../.tronide-profile`)。
-- 本仓库是规范镜像:IDE 工作区的合约/脚本定期同步至此;`docs/` 记录 dogfooding 进展。
-- 逻辑回归测试:`npm install && npm test`(Hardhat + ethers,solc 0.8.20 / evm paris,与 Nile 部署编译器一致)。覆盖 TRC-721 标准一致性、两步主公移交、safe transfer 回调、tokenURI JSON 转义、Base64/toString 差分、账本不变量;链上集成验证仍走 IDE 场景 + TronBox 导出。
+**23** IDE features exercised end-to-end · **13** findings filed (J-001…J-013) · **6** fixed upstream with regression gates · **3** honestly retracted after re-verification · **2** root-caused to a shared LocalStorage-backend design and scheduled as upstream migration work · **2** live deployments signed through TronLink on Nile.
 
-## 阶段
+The campaign's discipline — *verify strictly before concluding, retract in public, prefer reading the chain over reading the UI* — is documented in [docs/case-study.md](docs/case-study.md).
 
-- **P0 立项** ✅ 工作区(模板)+ 编译冒烟 + 本仓库奠基
-- **P1 合约开发** — 编辑器 lint / AI 工具 / Format / UML / 静态分析 / 编译器配置
-- **P2 本地链** — VM 部署 / recorder 场景 / debugger / TronBox 导出
-- **P3 版本管理** — IDE Git 面板 / GitHub 推送
-- **P4 实链** — TronLink Nile 部署 / TronScan 验证包(Flatten)
-- **P5 收尾** — 备份恢复演练 / 缺陷清单汇总
+## License
 
-进度矩阵:`docs/dogfooding-matrix.md` · 开发日志:`docs/journal.md`
+[MIT](LICENSE)

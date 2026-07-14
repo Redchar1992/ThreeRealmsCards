@@ -40,6 +40,8 @@ contract PeachPavilion is ITRC721Receiver {
         revert GiftsOnlyViaDeposit();
     }
 
+    /// @notice Escrow `tokenId` for `heir` to claim later. The caller must
+    /// hold the card and have approved the pavilion beforehand.
     function depositGift(uint256 tokenId, address heir) external {
         address holder;
         try cards.ownerOf(tokenId) returns (address h) {
@@ -57,6 +59,7 @@ contract PeachPavilion is ITRC721Receiver {
         emit GiftDeposited(tokenId, msg.sender, heir);
     }
 
+    /// @notice The designated heir collects the escrowed card.
     function claimGift(uint256 tokenId) external {
         address heir = heirOf[tokenId];
         if (heir == address(0)) revert NothingDeposited(tokenId);

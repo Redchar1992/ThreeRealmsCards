@@ -65,6 +65,16 @@ describe("PeachPavilion", () => {
       .withArgs(99, "unknown card");
   });
 
+  it("relays require-string reverts from legacy card contracts verbatim", async () => {
+    const legacy = await ethers.deployContract("StringRevertingCardsMock");
+    const legacyPavilion = await ethers.deployContract("PeachPavilion", [
+      await legacy.getAddress(),
+    ]);
+    await expect(legacyPavilion.connect(alice).depositGift(1, bob.address))
+      .to.be.revertedWithCustomError(legacyPavilion, "CardContractRejected")
+      .withArgs(1, "legacy string revert");
+  });
+
   it("claiming an untouched card reverts", async () => {
     await expect(pavilion.connect(bob).claimGift(1)).to.be.revertedWithCustomError(
       pavilion,

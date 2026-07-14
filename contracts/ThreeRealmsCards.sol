@@ -50,6 +50,7 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
 
     function symbol() public pure override returns (string memory) { return "SANFEN"; }
 
+    /// @notice Lifetime mint count; ids are sequential from 1, nothing burns.
     function totalMinted() external view returns (uint256) { return _serial; }
 
     // ------------------------------------------------------------- TRC-165
@@ -63,6 +64,8 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
     }
 
     // ------------------------------------------------------------- minting
+    /// @notice Suzerain-only: mint one fully-specified card to `to`.
+    /// Stats are validated to 0-100 by `clampStat` (reverts, does not clamp).
     function mintCard(address to, Card calldata card) public onlySuzerain returns (uint256 tokenId) {
         tokenId = _mint(to, card);
     }
@@ -92,6 +95,7 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
     }
 
     // ----------------------------------------------------------- transfers
+    /// @notice Single-card approval, settable by the holder or an operator.
     function approve(address approved, uint256 tokenId) public override {
         address holder = _holderOf(tokenId);
         if (msg.sender != holder && !isApprovedForAll[holder][msg.sender]) revert NotAuthorized(msg.sender, tokenId);
@@ -99,11 +103,14 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
         emit Approval(holder, approved, tokenId);
     }
 
+    /// @notice Grant or revoke operator rights over every card the caller holds.
     function setApprovalForAll(address operator, bool approved) public override {
         isApprovedForAll[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
+    /// @notice Bare transfer; authorized callers are the holder, the approved
+    /// address, or an operator. Clears any single-card approval on the way.
     function transferFrom(address from, address to, uint256 tokenId) public override {
         address holder = _holderOf(tokenId);
         if (holder != from) revert NotAuthorized(from, tokenId);
@@ -156,11 +163,13 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
         return _balances[holder];
     }
 
+    /// @notice Approved address for a card; reverts for unknown cards per spec.
     function getApproved(uint256 tokenId) public view override returns (address) {
         _holderOf(tokenId);
         return _tokenApprovals[tokenId];
     }
 
+    /// @notice Full on-chain card data for an existing token.
     function cardOf(uint256 tokenId) external view returns (Card memory card) {
         _holderOf(tokenId);
         card = _cards[tokenId];

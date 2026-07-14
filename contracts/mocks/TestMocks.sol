@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import { ITRC721Receiver } from "../interfaces/ITRC721Receiver.sol";
 import { Base64 } from "../libs/Base64.sol";
 import { Str } from "../utils/StrUtils.sol";
+import { Suzerain } from "../access/Suzerain.sol";
 
 /// @dev Test-only doubles for the Hardhat suite — not part of the deployable
 /// surface and excluded from flatten/verification flows.
@@ -29,6 +30,19 @@ contract TRC721ReceiverMock is ITRC721Receiver {
         require(!_rejects, "TRC721ReceiverMock: rejecting");
         emit Received(operator, from, tokenId, data);
         return _retval;
+    }
+}
+
+/// @dev Concrete Suzerain so the abstract base's guards are testable alone.
+contract SuzerainMock is Suzerain {
+    constructor(address firstLord) Suzerain(firstLord) {}
+}
+
+/// @dev A "card contract" whose ownerOf reverts require-string style, to
+/// exercise the pavilion's catch Error(string) branch.
+contract StringRevertingCardsMock {
+    function ownerOf(uint256) external pure returns (address) {
+        revert("legacy string revert");
     }
 }
 
