@@ -9,14 +9,14 @@
 
 English · [简体中文](README.zh-CN.md)
 
-Three Kingdoms general cards: four factions (WEI / SHU / WU / QUN), five rarities (N → LEGEND), four 0–100 stats, and a one-shot **"Peach Garden" genesis** — Liu Bei, Guan Yu, Zhang Fei as LEGEND 1/1s, sealed forever after one mint. Metadata lives entirely on chain as `data:application/json;base64,…`: no IPFS pin to lapse, no metadata server to die. If the chain is up, the cards are whole.
+Three Kingdoms general cards: four factions (WEI / SHU / WU / QUN), five rarities (N → LEGEND), four 0–100 stats, and a one-shot **"Peach Garden" genesis** — Liu Bei, Guan Yu, Zhang Fei as LEGEND 1/1s, sealed forever after one mint. Metadata — and, through the sealable SVG renderer, **the card art itself** — lives entirely on chain as data URIs: no IPFS pin to lapse, no metadata server to die. If the chain is up, the cards are whole.
 
 ## Why this repo is worth reading
 
 - **A reference TRC-721, zero dependencies.** The full core + metadata surface — both `safeTransferFrom` overloads with a `try/catch` receiver probe, TRC-165 with compiler-computed `type(X).interfaceId` (no hand-copied magic constants), spec-grade revert semantics on `ownerOf` / `balanceOf` / `getApproved`, two-step ownership handover, custom errors throughout. No OpenZeppelin import: every byte that ends up on chain is in this repo, which makes the whole surface auditable in one sitting.
-- **Fully on-chain metadata done right.** `Card → JSON → Base64 → data:` URI, with user-supplied strings JSON-escaped on chain (`"` `\` and control chars — a quote in a general's name cannot break wallets), multi-byte UTF-8 passing through untouched.
+- **Fully on-chain metadata *and artwork*.** `Card → JSON → Base64 → data:` URI for metadata, plus `CardRenderer` — the card face drawn as pure SVG in Solidity (faction-themed frame, rarity stars, stat bars) and embedded as a nested `data:image/svg+xml;base64` URI. User strings are JSON-escaped *and* XML-escaped on chain; a broken or hostile renderer degrades to imageless metadata instead of bricking `tokenURI`; the suzerain can `sealRenderer()` forever once the art is final.
 - **Deliberately spiky Solidity.** File-level types and free functions, a `global` using-for, aliased named imports, a same-file-two-paths import trap, a public-state-var overriding an interface function, `unchecked` blocks, an assembly guard, reverting `receive`/`fallback` — each one placed on purpose to stress compilers, flatteners, UML generators, linters and analyzers, and annotated with *why*. See [docs/architecture.md](docs/architecture.md).
-- **54 tests, 100% coverage, gated in CI.** Statements, branches, functions and lines all at 100% (mocks excluded); the CI fails if any of it regresses. Includes differential tests of the on-chain Base64/decimal encoders against Node's implementations, a receiver-behavior matrix, and a seeded random transfer storm checked against a model.
+- **71 tests, 100% coverage, gated in CI.** Statements, branches, functions and lines all at 100% (mocks excluded); the CI fails if any of it regresses. Includes differential tests of the on-chain Base64/decimal/JSON-escape/XML-escape helpers against reference implementations, XML well-formedness checks on every rendered SVG, a receiver-behavior matrix, and a seeded random transfer storm checked against a model.
 - **A real dogfooding campaign, honestly kept.** The entire project — scaffold, edit, lint, compile, VM deploy, debug, record/replay, TronBox export, git push, TronLink mainnet-style deploys, flatten & verification — was executed **inside TronIDE**, driving 23 IDE features and filing 13 findings, of which 6 were fixed upstream with regression gates and **3 were retracted after strict re-verification** (the ledger counts our own misreads too). See [docs/case-study.md](docs/case-study.md).
 
 > **Audit status:** engineered to audit-grade practice, **not yet externally audited**. Read [SECURITY.md](SECURITY.md) before depositing value you care about.
@@ -30,12 +30,14 @@ contracts/
 │   │   ├── ITRC165.sol         interface detection
 │   │   ├── ITRC721.sol         core surface (is ITRC165) — 9 fns XOR to 0x80ac58cd
 │   │   ├── ITRC721Metadata.sol name / symbol / tokenURI (is ITRC721)
-│   │   └── ITRC721Receiver.sol safe-transfer hook
+│   │   ├── ITRC721Receiver.sol safe-transfer hook
+│   │   └── IRenderer.sol       pluggable art hook (Card in, image URI out)
 │   ├── access/Suzerain.sol     two-step Ownable (主公): designate heir → heir accepts
+│   ├── render/CardRenderer.sol 丹青 — the card face as pure on-chain SVG
 │   ├── types/CardTypes.sol     file-level enums, Card struct, free fns, global using-for
 │   ├── libs/CardCodec.sol      Card → data:application/json;base64 (JSON-escaped)
 │   ├── libs/Base64.sol         loop-based encoder, no assembly
-│   └── utils/StrUtils.sol      toString / equal / escapeJson
+│   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
 ├── PeachPavilion.sol           gift escrow: deposit a card for an heir to claim;
 │                               rejects naked safeTransferFrom deliveries
 └── mocks/TestMocks.sol         test doubles only — never deploy
@@ -55,7 +57,7 @@ Transactions, deployer, energy numbers and verification materials: [deployments/
 
 ```bash
 npm install
-npm test              # 54 specs, ~1s, no local TRON node needed
+npm test              # 71 specs, ~2s, no local TRON node needed
 npm run coverage      # istanbul report; CI enforces 100%
 npx hardhat compile   # solc 0.8.20, evm target paris (no PUSH0 ahead of the TVM)
 ```

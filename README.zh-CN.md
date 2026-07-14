@@ -9,14 +9,14 @@
 
 [English](README.md) · 简体中文
 
-三国武将卡牌：魏 / 蜀 / 吴 / 群四阵营，N → LEGEND 五档稀有度，武力 / 智力 / 统率 / 魅力四维（0–100），以及一次性的**「桃园」创世**——刘备、关羽、张飞 LEGEND 1/1，铸后永封。元数据整体上链（`data:application/json;base64,…`）：没有会过期的 IPFS pin，没有会宕的元数据服务器——链在，卡就完整。
+三国武将卡牌：魏 / 蜀 / 吴 / 群四阵营，N → LEGEND 五档稀有度，武力 / 智力 / 统率 / 魅力四维（0–100），以及一次性的**「桃园」创世**——刘备、关羽、张飞 LEGEND 1/1，铸后永封。元数据——连同经可封印 SVG 渲染器生成的**卡面本身**——整体以 data URI 上链：没有会过期的 IPFS pin，没有会宕的元数据服务器——链在，卡就完整。
 
 ## 这个仓库值得一读的理由
 
 - **零依赖的 TRC-721 参考实现**：完整核心面 + 元数据扩展——双重载 `safeTransferFrom`（try/catch 受体探测）、`type(X).interfaceId` 编译器计算的 TRC-165（不手抄魔法常量）、`ownerOf` / `balanceOf` / `getApproved` 规范级回滚语义、两步 owner 移交、全程自定义错误。不引 OpenZeppelin：上链的每个字节都在本仓库内，一次通读即可完成审计面覆盖。
-- **全链上元数据的正确做法**：`Card → JSON → Base64 → data:` URI，用户可控字符串链上转义（`"`、`\`、控制字符——武将名里一个引号不会击穿钱包解析），多字节 UTF-8 原样通过。
+- **全链上元数据与卡面**：`Card → JSON → Base64 → data:` URI 之外，`CardRenderer`（丹青）用纯 Solidity 画出 SVG 卡面（阵营配色边框、稀有度星级、四维属性条），以嵌套 `data:image/svg+xml;base64` 内嵌。用户字符串链上做 JSON **和** XML 双重转义；渲染器坏掉或作恶时 `tokenURI` 优雅降级为无图元数据而非整体报废；主公可 `sealRenderer()` 把卡面永久封印。
 - **故意刁钻的 Solidity**：文件级类型与自由函数、`global` using-for、别名命名导入、同文件双路径导入陷阱、public 状态变量覆写接口函数、`unchecked`、assembly 守卫、reverting `receive`/`fallback`——每一处都是为了压测编译器、拍平器、UML、linter 与分析器而放置，并注明了 *为什么*。详见 [docs/architecture.md](docs/architecture.md)。
-- **54 个测试、100% 覆盖率、CI 闸门**：语句 / 分支 / 函数 / 行全部 100%（mocks 除外），回退即 CI 失败。含链上 Base64 / 十进制编码器对 Node 实现的差分测试、safe transfer 受体行为矩阵、种子随机转账风暴对账。
+- **71 个测试、100% 覆盖率、CI 闸门**：语句 / 分支 / 函数 / 行全部 100%（mocks 除外），回退即 CI 失败。含链上 Base64 / 十进制 / JSON 转义 / XML 转义对参考实现的差分测试、每张 SVG 的 XML 良构校验、safe transfer 受体行为矩阵、种子随机转账风暴对账。
 - **真实的 dogfooding 战役、诚实的账本**：从脚手架、编辑、lint、编译，到 VM 部署、调试、录制回放、TronBox 导出、git 推送、TronLink 实链部署、拍平与验证包——全程在 TronIDE 内完成，走遍 23 项 IDE 功能，提交 13 条发现：6 条修复入库（带回归门禁）、**3 条经严格复验后诚实撤回**（自己的误判也记账）。详见 [docs/case-study.md](docs/case-study.md)。
 
 > **审计状态**：按审计级实践工程化，**尚未经外部审计**。托管真实价值前请先读 [SECURITY.md](SECURITY.md)。
@@ -30,12 +30,14 @@ contracts/
 │   │   ├── ITRC165.sol         接口探测
 │   │   ├── ITRC721.sol         核心面（is ITRC165）—— 9 函数 XOR = 0x80ac58cd
 │   │   ├── ITRC721Metadata.sol name / symbol / tokenURI（is ITRC721）
-│   │   └── ITRC721Receiver.sol safe transfer 受体钩子
+│   │   ├── ITRC721Receiver.sol safe transfer 受体钩子
+│   │   └── IRenderer.sol       可插拔卡面钩子（进 Card，出图像 URI）
 │   ├── access/Suzerain.sol     两步 Ownable（主公）：指定继承人 → 继承人接受
+│   ├── render/CardRenderer.sol 丹青 —— 纯链上 SVG 卡面
 │   ├── types/CardTypes.sol     文件级枚举、Card 结构、自由函数、global using-for
 │   ├── libs/CardCodec.sol      Card → data:application/json;base64（含 JSON 转义）
 │   ├── libs/Base64.sol         循环实现的编码器，无 assembly
-│   └── utils/StrUtils.sol      toString / equal / escapeJson
+│   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
 ├── PeachPavilion.sol           桃园馆礼物托管：存卡指定继承人、继承人领取；
 │                               拒收绕过托管的裸 safeTransferFrom
 └── mocks/TestMocks.sol         仅测试用替身 —— 切勿部署
@@ -55,7 +57,7 @@ contracts/
 
 ```bash
 npm install
-npm test              # 54 个用例，约 1 秒，无需本地 TRON 节点
+npm test              # 71 个用例，约 2 秒，无需本地 TRON 节点
 npm run coverage      # istanbul 报告；CI 强制 100%
 npx hardhat compile   # solc 0.8.20，evm target paris（不让 PUSH0 跑在 TVM 前面）
 ```

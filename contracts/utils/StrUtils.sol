@@ -60,4 +60,38 @@ library Str {
     function _hexChar(uint8 nibble) private pure returns (bytes1) {
         return nibble < 10 ? bytes1(nibble + 0x30) : bytes1(nibble + 0x57); // 0-9 / a-f
     }
+
+    /// @notice Escape a string for an XML TEXT NODE: & < > become entities,
+    /// control chars (illegal in XML even escaped) are stripped, everything
+    /// else — including multi-byte UTF-8 — passes through. NOT attribute-safe
+    /// (quotes stay raw); renderers must keep user text out of attributes.
+    function escapeXml(string memory value) internal pure returns (string memory) {
+        bytes memory raw = bytes(value);
+        uint256 extra;
+        uint256 stripped;
+        for (uint256 i = 0; i < raw.length; i++) {
+            bytes1 c = raw[i];
+            if (c == "&") extra += 4; // &amp;
+            else if (c == "<" || c == ">") extra += 3; // &lt; / &gt;
+            else if (uint8(c) < 0x20) stripped += 1;
+        }
+        if (extra == 0 && stripped == 0) return value;
+        bytes memory escaped = new bytes(raw.length + extra - stripped);
+        uint256 n;
+        for (uint256 i = 0; i < raw.length; i++) {
+            bytes1 c = raw[i];
+            if (c == "&") {
+                escaped[n++] = "&"; escaped[n++] = "a"; escaped[n++] = "m"; escaped[n++] = "p"; escaped[n++] = ";";
+            } else if (c == "<") {
+                escaped[n++] = "&"; escaped[n++] = "l"; escaped[n++] = "t"; escaped[n++] = ";";
+            } else if (c == ">") {
+                escaped[n++] = "&"; escaped[n++] = "g"; escaped[n++] = "t"; escaped[n++] = ";";
+            } else if (uint8(c) < 0x20) {
+                // dropped
+            } else {
+                escaped[n++] = c;
+            }
+        }
+        return string(escaped);
+    }
 }

@@ -515,6 +515,7 @@ describe("ThreeRealmsCards", () => {
         { trait_type: "Command", value: 91 },
         { trait_type: "Charisma", value: 81 },
       ]);
+      expect(meta.image).to.equal(undefined); // no renderer attached
     });
 
     it("renders every faction and rarity name", async () => {
@@ -546,6 +547,87 @@ describe("ThreeRealmsCards", () => {
       const meta = decodeMeta(await cards.tokenURI(1));
       expect(meta.name).to.equal("赵子龙 🐉 #1");
       expect(meta.description).to.contain("五虎上将");
+    });
+  });
+
+  // ------------------------------------------------------- renderer wiring
+  describe("renderer wiring", () => {
+    const SVG_PREFIX = "data:image/svg+xml;base64,";
+    let renderer;
+
+    beforeEach(async () => {
+      renderer = await ethers.deployContract("CardRenderer");
+      await cards.mintCard(alice.address, CARD());
+    });
+
+    it("defaults to imageless metadata with an unsealed empty slot", async () => {
+      expect(await cards.renderer()).to.equal(ethers.ZeroAddress);
+      expect(await cards.rendererSealed()).to.equal(false);
+      expect(decodeMeta(await cards.tokenURI(1)).image).to.equal(undefined);
+    });
+
+    it("only the suzerain touches the renderer", async () => {
+      await expect(
+        cards.connect(alice).setRenderer(await renderer.getAddress())
+      ).to.be.revertedWithCustomError(cards, "NotSuzerain");
+      await expect(cards.connect(alice).sealRenderer()).to.be.revertedWithCustomError(
+        cards,
+        "NotSuzerain"
+      );
+    });
+
+    it("setRenderer lights the image up — full two-layer decode", async () => {
+      await expect(cards.setRenderer(await renderer.getAddress()))
+        .to.emit(cards, "RendererChanged")
+        .withArgs(await renderer.getAddress(), false);
+      const meta = decodeMeta(await cards.tokenURI(1));
+      expect(meta.image.startsWith(SVG_PREFIX)).to.be.true;
+      const svg = Buffer.from(meta.image.slice(SVG_PREFIX.length), "base64").toString("utf8");
+      expect(svg).to.contain("Zhao Yun");
+      expect(svg).to.contain("SHU · SSR");
+      // the rest of the metadata is untouched
+      expect(meta.name).to.equal("Zhao Yun #1");
+      expect(meta.attributes.length).to.equal(6);
+    });
+
+    it("resetting to address(0) removes the image again", async () => {
+      await cards.setRenderer(await renderer.getAddress());
+      await expect(cards.setRenderer(ethers.ZeroAddress))
+        .to.emit(cards, "RendererChanged")
+        .withArgs(ethers.ZeroAddress, false);
+      expect(decodeMeta(await cards.tokenURI(1)).image).to.equal(undefined);
+    });
+
+    it("a reverting renderer degrades to imageless metadata instead of bricking tokenURI", async () => {
+      const broken = await ethers.deployContract("RevertingRendererMock");
+      await cards.setRenderer(await broken.getAddress());
+      const meta = decodeMeta(await cards.tokenURI(1)); // must not throw
+      expect(meta.image).to.equal(undefined);
+      expect(meta.name).to.equal("Zhao Yun #1");
+    });
+
+    it("a hostile renderer cannot inject JSON", async () => {
+      const evil = await ethers.deployContract("EvilRendererMock");
+      await cards.setRenderer(await evil.getAddress());
+      const meta = decodeMeta(await cards.tokenURI(1));
+      expect(meta.image).to.equal('"},"pwn":true,"x":"'); // escaped, inert, verbatim
+      expect(meta.pwn).to.equal(undefined);
+      expect(meta.attributes.length).to.equal(6);
+    });
+
+    it("sealRenderer is one-way and locks the slot forever", async () => {
+      await cards.setRenderer(await renderer.getAddress());
+      await expect(cards.sealRenderer())
+        .to.emit(cards, "RendererChanged")
+        .withArgs(await renderer.getAddress(), true);
+      expect(await cards.rendererSealed()).to.equal(true);
+      await expect(cards.setRenderer(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        cards,
+        "RendererSealed"
+      );
+      await expect(cards.sealRenderer()).to.be.revertedWithCustomError(cards, "RendererSealed");
+      // the sealed renderer keeps rendering
+      expect(decodeMeta(await cards.tokenURI(1)).image.startsWith(SVG_PREFIX)).to.be.true;
     });
   });
 
@@ -665,6 +747,26 @@ describe("library differentials", () => {
     }
     // clean strings take the fast path untouched
     expect(await lib.escapeJson("plain 中文")).to.equal("plain 中文");
+  });
+
+  it("Str.escapeXml matches a reference implementation", async () => {
+    const refEscapeXml = (value) =>
+      Array.from(value)
+        .filter((ch) => ch.codePointAt(0) >= 0x20)
+        .map((ch) => (ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch))
+        .join("");
+    const samples = [
+      "",
+      "plain",
+      "Cao & <Wei> Pi",
+      "ab\nc\td\re",
+      "中文 & 🐉",
+      ">>&<<",
+      "fast path 中文 🐉",
+    ];
+    for (const sample of samples) {
+      expect(await lib.escapeXml(sample)).to.equal(refEscapeXml(sample));
+    }
   });
 
   it("Str.equal compares by content", async () => {

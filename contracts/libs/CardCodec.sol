@@ -26,7 +26,11 @@ library CardCodec {
         return "LEGEND";
     }
 
-    function toTokenURI(Card memory card, uint256 tokenId) internal pure returns (string memory) {
+    /// @param imageURI_ self-contained image URI from the active renderer;
+    /// empty string omits the field, byte-for-byte matching the pre-renderer
+    /// metadata shape. Escaped like every user-influenced string — a rogue
+    /// renderer must not be able to inject JSON.
+    function toTokenURI(Card memory card, uint256 tokenId, string memory imageURI_) internal pure returns (string memory) {
         bytes memory attrs = abi.encodePacked(
             '[{"trait_type":"Faction","value":"', factionName(card.faction),
             '"},{"trait_type":"Rarity","value":"', rarityName(card.rarity),
@@ -35,12 +39,15 @@ library CardCodec {
             '},{"trait_type":"Command","value":', uint256(card.command).toString(),
             '},{"trait_type":"Charisma","value":', uint256(card.charisma).toString(), '}]'
         );
+        bytes memory imageProp = bytes(imageURI_).length == 0
+            ? bytes("")
+            : abi.encodePacked('"image":"', S.escapeJson(imageURI_), '",');
         // user-supplied strings are JSON-escaped — a quote in a general's
         // name must not break every wallet that parses the metadata
         bytes memory json = abi.encodePacked(
             '{"name":"', S.escapeJson(card.general), ' #', tokenId.toString(),
             '","description":"Three Realms Cards - a Three Kingdoms general card of the ',
-            S.escapeJson(card.series), ' series.","attributes":', attrs, '}'
+            S.escapeJson(card.series), ' series.",', imageProp, '"attributes":', attrs, '}'
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(json)));
     }

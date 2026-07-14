@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import { ITRC721Receiver } from "../interfaces/ITRC721Receiver.sol";
+import { IRenderer } from "../interfaces/IRenderer.sol";
+import { Card } from "../types/CardTypes.sol";
 import { Base64 } from "../libs/Base64.sol";
 import { Str } from "../utils/StrUtils.sol";
 import { Suzerain } from "../access/Suzerain.sol";
@@ -53,6 +55,20 @@ contract NonReceiverMock {
     }
 }
 
+/// @dev A renderer that always reverts — tokenURI must degrade gracefully.
+contract RevertingRendererMock is IRenderer {
+    function imageURI(Card memory, uint256) external pure override returns (string memory) {
+        revert("renderer down");
+    }
+}
+
+/// @dev A renderer that tries to break out of the metadata JSON.
+contract EvilRendererMock is IRenderer {
+    function imageURI(Card memory, uint256) external pure override returns (string memory) {
+        return '"},"pwn":true,"x":"';
+    }
+}
+
 /// @dev Exposes internal library functions for differential testing.
 contract LibHarness {
     // redeclared so the fragment is present in this contract's ABI for
@@ -69,6 +85,10 @@ contract LibHarness {
 
     function escapeJson(string calldata value) external pure returns (string memory) {
         return Str.escapeJson(value);
+    }
+
+    function escapeXml(string calldata value) external pure returns (string memory) {
+        return Str.escapeXml(value);
     }
 
     function strEqual(string calldata a, string calldata b) external pure returns (bool) {

@@ -5,6 +5,7 @@ import { ITRC165 } from "./interfaces/ITRC165.sol";
 import { ITRC721 } from "./interfaces/ITRC721.sol";
 import { ITRC721Metadata } from "./interfaces/ITRC721Metadata.sol";
 import { ITRC721Receiver } from "./interfaces/ITRC721Receiver.sol";
+import { IRenderer } from "./interfaces/IRenderer.sol";
 import { Card, Faction, Rarity, clampStat } from "./types/CardTypes.sol";
 import { CardCodec } from "./libs/CardCodec.sol";
 import "./access/Suzerain.sol";
@@ -14,8 +15,9 @@ import "./access/Suzerain.sol";
 /// override (isApprovedForAll — the one getter the spec allows to not revert),
 /// free functions imported by name, a GLOBAL using-for, a library using-for,
 /// custom errors everywhere, unchecked arithmetic, an assembly helper, TRC-165
-/// via type().interfaceId, a try/catch receiver probe (safeTransferFrom), and
-/// a reverting receive().
+/// via type().interfaceId, a try/catch receiver probe (safeTransferFrom), a
+/// reverting receive(), and a pluggable-then-sealable art renderer whose
+/// failures degrade gracefully (try/catch in tokenURI).
 contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
     using CardCodec for Card;
 
@@ -27,11 +29,18 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
     error NoTribute();
     error ZeroHolderQuery();
     error ReceiverRejected(address to, uint256 tokenId);
+    error RendererSealed();
 
     event CardMinted(uint256 indexed tokenId, string general, Faction faction, Rarity rarity);
+    event RendererChanged(address indexed renderer, bool sealedForever);
 
     uint256 private _serial;
     bool public genesisSealed;
+
+    /// @notice Pluggable art layer: address(0) = imageless metadata. Presentation
+    /// power only — a renderer can never touch ownership, stats or text.
+    IRenderer public renderer;
+    bool public rendererSealed;
 
     mapping(uint256 => address) private _owners;
     mapping(address => uint256) private _balances;
@@ -52,6 +61,23 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
 
     /// @notice Lifetime mint count; ids are sequential from 1, nothing burns.
     function totalMinted() external view returns (uint256) { return _serial; }
+
+    // ------------------------------------------------------------ renderer
+    /// @notice Suzerain-only: swap the card-art renderer. address(0) turns
+    /// the image off (metadata reverts to the imageless shape).
+    function setRenderer(IRenderer newRenderer) external onlySuzerain {
+        if (rendererSealed) revert RendererSealed();
+        renderer = newRenderer;
+        emit RendererChanged(address(newRenderer), false);
+    }
+
+    /// @notice Suzerain-only, ONE-WAY: freeze the current renderer forever —
+    /// after this the card art is as immutable as the cards themselves.
+    function sealRenderer() external onlySuzerain {
+        if (rendererSealed) revert RendererSealed();
+        rendererSealed = true;
+        emit RendererChanged(address(renderer), true);
+    }
 
     // ------------------------------------------------------------- TRC-165
     /// @notice Interface ids computed by the compiler (XOR of each interface's
@@ -183,7 +209,17 @@ contract ThreeRealmsCards is Suzerain, ITRC721Metadata {
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _holderOf(tokenId);
-        return _cards[tokenId].toTokenURI(tokenId); // library using-for
+        Card memory card = _cards[tokenId];
+        string memory image = "";
+        IRenderer painter = renderer;
+        if (address(painter) != address(0)) {
+            // a broken renderer must never brick the metadata — degrade to
+            // the imageless shape instead of bubbling the revert
+            try painter.imageURI(card, tokenId) returns (string memory uri) {
+                image = uri;
+            } catch {}
+        }
+        return card.toTokenURI(tokenId, image); // library using-for
     }
 
     function _holderOf(uint256 tokenId) internal view returns (address holder) {

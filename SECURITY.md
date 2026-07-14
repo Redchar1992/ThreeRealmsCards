@@ -13,12 +13,14 @@
 
 ## Engineering posture
 
-- 54 Hardhat specs; **100% statement / branch / function / line coverage**
+- 71 Hardhat specs; **100% statement / branch / function / line coverage**
   over every deployable contract (mocks excluded), enforced by a CI gate
   that fails below 100%.
 - Differential tests: the on-chain Base64 and decimal encoders are compared
   against Node's implementations on RFC 4648 vectors plus seeded random
-  blobs; `escapeJson` output must `JSON.parse` back to the original string.
+  blobs; `escapeJson` output must `JSON.parse` back to the original string;
+  `escapeXml` is compared against a reference implementation and every
+  rendered SVG must pass an XML well-formedness check.
 - Invariant testing: a seeded random mint/transfer storm re-derives the full
   ownership ledger and reconciles it against `ownerOf`/`balanceOf`/
   `totalMinted`.
@@ -34,6 +36,7 @@
 |---|---|---|
 | mint any card / the one-shot genesis | `suzerain` | genesis is single-shot for everyone, forever (`genesisSealed`) |
 | hand over control | `suzerain` → heir | two-step: heir must `acceptSuzerainty()`; `address(0)` cancels |
+| swap / seal the art renderer | `suzerain` (until sealed) | presentation-only: a renderer can never touch ownership, stats or metadata text; hostile output is escaped inert; failures degrade to imageless metadata; `sealRenderer()` is one-way |
 | pause / upgrade / burn / censor transfers | **nobody** | not implemented — deployed code is immutable |
 
 Holders' transfer and approval rights follow TRC-721 exactly; the suzerain
