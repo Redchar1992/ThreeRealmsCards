@@ -11,7 +11,10 @@
 | 部署账户 | `TCrDi83pUoK17GbwxN1SckM3YNXzahWvoN` |
 | 编译器 | Tron Solidity 0.8.20(builtin);fee limit 上限 1000 TRX |
 | 驱动 | `tools/p11-nile-v5.cjs` + `tools/p11b-genesis-renderer.cjs` |
-| 日期 | 2026-07-14(P11) |
+| 虎符 | `TigerTally` @ `TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19`(**现任 suzerain**,元帅=部署账户;部署 tx [`f3b02d40…`],经两步移交就任) |
+| 日期 | 2026-07-14(P11/P12) |
+
+**P12 虎符演武**:元帅经 TronLink typed-data 弹窗签发不记名 `MintOrder`(chainId 由链上 `domainSeparator()` 反推 = 3448148188;签名先本地 `ecrecover` 对权威 digest 验证再上链)→ 持券人兑现(tx [`015290ec…`](https://nile.tronscan.org/#/transaction/015290ec09703542f37f550b959b280cc86563c6610b86b968a8c94ce3871232))→ **诸葛亮 #4 铸成**(智力 100,LEGEND,系列 "Tiger Tally")。链上核验:`totalMinted=4`、`ownerOf(4)=元帅`、`tallyBroken(1)=true`(防重放生效)、`tokenURI(4)` 公共节点可读且 SVG 完整。
 
 链上验证(TronGrid 直查):`renderer()==CardRenderer`、`rendererSealed=false`、`genesisSealed=true`、`totalMinted=3`、`supportsInterface(0x80ac58cd)=true`;**三张创世卡的 `tokenURI` 均可经公共节点读出**——双层 data-URI 解码成功,每张内嵌 SVG ~2.1KB,刘备/关羽/张飞 LEGEND 五星卡面完整。
 

@@ -61,23 +61,34 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
     await page.locator('select[data-id="workspacesSelect"]').selectOption(WS)
     await page.waitForTimeout(2000)
   }
+  await page.waitForFunction(() => !!window.remixFileSystem, null, { timeout: 30_000 })
   const desired = FILES.map((f) => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')])
   const wrote = await page.evaluate(({ ws, files }) => {
     const fsx = window.remixFileSystem
     const mkdirp = (p) => { const parts = p.split('/'); let acc = ''; for (const part of parts) { acc = acc ? acc + '/' + part : part; try { fsx.mkdirSync(acc) } catch (e) {} } }
-    let written = 0
-    for (const [rel, content] of files) {
-      const full = `.workspaces/${ws}/contracts/${rel}`
-      let cur = null; try { cur = fsx.readFileSync(full, 'utf8') } catch (e) {}
-      if (cur === content) continue
-      mkdirp(full.split('/').slice(0, -1).join('/')); fsx.writeFileSync(full, content); written++
-    }
+    // Free localStorage quota BEFORE writing: compile artifacts + a saved
+    // scenario accumulate and, on the BrowserFS LocalStorage backend (~5MB),
+    // a normal workspace write starts throwing quota errors (the J-005/J-009
+    // family). They are regenerated on the next compile.
+    const rmrf = (p) => { try { const ents = fsx.readdirSync(p); for (const e of ents) { const f = p + '/' + e; let d = false; try { d = fsx.statSync(f).isDirectory() } catch (er) {} if (d) rmrf(f); else { try { fsx.unlinkSync(f) } catch (er) {} } } try { fsx.rmdirSync(p) } catch (er) {} } catch (e) {} }
+    rmrf(`.workspaces/${ws}/contracts/artifacts`)
+    try { fsx.unlinkSync(`.workspaces/${ws}/contracts/scenario.json`) } catch (e) {}
+    let written = 0; let quotaHit = false
+    try {
+      for (const [rel, content] of files) {
+        const full = `.workspaces/${ws}/contracts/${rel}`
+        let cur = null; try { cur = fsx.readFileSync(full, 'utf8') } catch (e) {}
+        if (cur === content) continue
+        mkdirp(full.split('/').slice(0, -1).join('/')); fsx.writeFileSync(full, content); written++
+      }
+    } catch (e) { quotaHit = String((e && e.message) || e) }
     let verified = 0
     for (const [rel, content] of files) { try { if (fsx.readFileSync(`.workspaces/${ws}/contracts/${rel}`, 'utf8') === content) verified++ } catch (e) {} }
-    return { written, verified }
+    return { written, verified, quotaHit }
   }, { ws: WS, files: desired })
+  if (wrote.quotaHit) note('J-005/J-009 corroboration: BrowserFS LocalStorage write threw mid-run even after freeing artifacts (' + wrote.quotaHit + ')')
   log(`workspace ${WS}: ${wrote.written} written, ${wrote.verified}/${FILES.length} verified`)
-  if (wrote.verified !== FILES.length) throw new Error('workspace verify')
+  if (wrote.verified !== FILES.length) throw new Error('workspace verify (' + wrote.verified + '/' + FILES.length + ')')
   if (wrote.written > 0) {
     await page.waitForTimeout(6000)
     await page.reload({ waitUntil: 'load' }); await deOverlay()
@@ -126,10 +137,16 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
     await r.locator(`button[title^="${fn} - "]`).first().click()
     await page.waitForTimeout(1300)
   }
-  // the decoded return of the LAST read renders in an instance-level tree node
-  // ("0: bool: true", "0: address: 0x…", "0: string: …")
-  const lastDecoded = async () => (await page.locator('.instance [data-id^="treeViewLi"]').last().innerText().catch(() => '')).replace(/\s+/g, ' ')
-  const readCall = async (fn, argStr) => { await callWith(fn, argStr); return lastDecoded() }
+  // Decoded reads render as instance-level tree nodes ("0: bool: true",
+  // "0: address: 0x…"). Prior calls' nodes persist and tokenURI's JSON expands
+  // into many nested nodes, so `.last()` is wrong — filter by the expected
+  // Solidity return type and take the most recent match.
+  const decodedOfType = async (type) => {
+    const texts = await page.locator('.instance [data-id^="treeViewLi"]').allInnerTexts().catch(() => [])
+    const hits = texts.map((t) => t.replace(/\s+/g, ' ')).filter((t) => new RegExp(`:\\s*${type}:`, 'i').test(t))
+    return hits.length ? hits[hits.length - 1] : ''
+  }
+  const readCall = async (fn, argStr, type) => { await callWith(fn, argStr); return type ? decodedOfType(type) : (await page.locator('.instance [data-id^="treeViewLi"]').last().innerText().catch(() => '')).replace(/\s+/g, ' ') }
 
   // genesis so a suzerain + some tokens exist (A is suzerain)
   await callWith('mintPeachGardenGenesis', acctA)
@@ -137,8 +154,8 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
 
   // ===== 1. TRC-165 supportsInterface(bytes4) — the bytes4 input path
   const checkIface = async (id) => {
-    const out = await readCall('supportsInterface', id)
-    return /:\s*bool:\s*true|:\s*true\b/i.test(out) ? true : (/:\s*bool:\s*false|:\s*false\b/i.test(out) ? false : ('?:' + out.slice(-80)))
+    const out = await readCall('supportsInterface', id, 'bool')
+    return /:\s*bool:\s*true/i.test(out) ? true : (/:\s*bool:\s*false/i.test(out) ? false : ('?:' + out.slice(-80)))
   }
   const trc721 = await checkIface('0x80ac58cd')
   const metadata = await checkIface('0x5b5e139f')
@@ -169,32 +186,34 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
     }
   } else { note('no base64 metadata in tokenURI(4): ' + uriOut.slice(-160)) }
 
-  // ===== 3. two-step suzerainty transfer + cancel
-  const bTail = acctB.toLowerCase().replace(/^0x/, '')
-  const addrMatches = (decoded, tail) => decoded.toLowerCase().replace(/\s/g, '').includes(tail)
-  // pass to B (from A)
+  // ===== 3. two-step suzerainty transfer + cancel.
+  // The fork returns addresses base58-encoded, while the account dropdown is
+  // hex — so assert encoding-AGNOSTICALLY by comparing read values to each
+  // other: the throne must move to exactly the staged heir.
+  const addrOf = (decoded) => (decoded.match(/address:\s*([0-9A-Za-z]+)/) || [])[1] || ''
+  const isZero = (a) => /^(0x)?0{40}$/i.test(a) || /^T1111111111111111111111111111/.test(a) // base58 zero
   await setFrom(acctA)
+  const suzBefore = addrOf(await readCall('suzerain', undefined, 'address'))
   await callWith('passSuzerainty', acctB)
-  const heirRow = await readCall('heirApparent')
-  const heirIsB = addrMatches(heirRow, bTail)
-  const suzStillA = await readCall('suzerain')
-  log(`passSuzerainty(B): heirApparent==B? ${heirIsB}; suzerain still A? ${!addrMatches(suzStillA, bTail)}`)
+  const heir = addrOf(await readCall('heirApparent', undefined, 'address'))
+  const suzStill = addrOf(await readCall('suzerain', undefined, 'address'))
+  log(`passSuzerainty(B): staged heir=${heir.slice(0, 10)}… (differs from lord ${suzBefore.slice(0, 10)}…: ${heir !== suzBefore}); suzerain unchanged: ${suzStill === suzBefore}`)
   // accept from B — the account switch is the crux of the two-step design
   await setFrom(acctB)
   await callWith('acceptSuzerainty')
-  const after = await readCall('suzerain')
-  const suzerainIsB = addrMatches(after, bTail)
-  if (heirIsB && suzerainIsB) log('TWO-STEP SUZERAINTY VERIFIED — passSuzerainty(B) then acceptSuzerainty() from B moved the throne; account switch drove the second step')
-  else note(`two-step suzerainty mismatch: heirIsB=${heirIsB}, suzerainIsB=${suzerainIsB} (after=${after.slice(-90)})`)
+  const suzAfter = addrOf(await readCall('suzerain', undefined, 'address'))
+  const moved = suzAfter === heir && suzAfter !== suzBefore && heir && !isZero(heir)
+  if (moved) log(`TWO-STEP SUZERAINTY VERIFIED — throne moved from ${suzBefore.slice(0, 8)}… to the staged heir ${suzAfter.slice(0, 8)}… only after acceptSuzerainty() from B (account switch drove step 2)`)
+  else note(`two-step suzerainty mismatch: before=${suzBefore.slice(0, 12)} heir=${heir.slice(0, 12)} after=${suzAfter.slice(0, 12)}`)
 
   // cancel path: suzerain B stages a pass to A then cancels via address(0)
   await setFrom(acctB)
   await callWith('passSuzerainty', acctA)
+  const heirStaged = addrOf(await readCall('heirApparent', undefined, 'address'))
   await callWith('passSuzerainty', '0x0000000000000000000000000000000000000000')
-  const heirAfterCancel = await readCall('heirApparent')
-  const zeroHeir = /:\s*address:\s*(0x)?0{40}\b/i.test(heirAfterCancel) || /\b0x0{40}\b/.test(heirAfterCancel.replace(/\s/g, ''))
-  if (zeroHeir) log('CANCEL PATH VERIFIED — passSuzerainty(0) cleared heirApparent to the zero address')
-  else note('cancel path: heirApparent not clearly zero after passSuzerainty(0): ' + heirAfterCancel.slice(-90))
+  const heirAfterCancel = addrOf(await readCall('heirApparent', undefined, 'address'))
+  if (!isZero(heirStaged) && isZero(heirAfterCancel)) log('CANCEL PATH VERIFIED — a staged heir was cleared to the zero address by passSuzerainty(0)')
+  else note(`cancel path: staged=${heirStaged.slice(0, 12)} afterCancel=${heirAfterCancel.slice(0, 16)} (expected non-zero then zero)`)
 
   await page.screenshot({ path: SCRATCH + '/p9b-final.png' })
   await ctx.close()

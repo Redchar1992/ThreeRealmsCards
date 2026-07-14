@@ -10,7 +10,9 @@
   `TDQ9k3oq…` (v5) instance runs the hardened build plus the on-chain SVG
   renderer (`TAsJa3bb…`, unsealed) — standards surface, two-step handover
   and all three genesis `tokenURI`s were verified on chain through public
-  nodes right after deployment; v4/v3/v2/v1 are historical (see
+  nodes right after deployment; the v5 suzerainty is currently held by a
+  `TigerTally` (`TMUmN6NK…`) whose marshal is the deploy account, with
+  `returnSuzerainty` as the escape hatch. v4/v3/v2/v1 are historical (see
   deployments/nile.md, including the honest v4 incident notes).
 
 ## Engineering posture

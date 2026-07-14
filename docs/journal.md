@@ -139,3 +139,15 @@
 **P11(v5,当前:`TDQ9k3oq…` + 渲染器 `TAsJa3bb…`,未封印)**:途中再踩两坑——webpack 遮罩 iframe 在 reload 后复活拦截点击(修:每步点击前 deOverlay + force 点击),HMR 整页重载洗掉实例面板(修:**At Address** 把已上链实例挂回,免重部署)。终态链上验证:`renderer()` 精确匹配、`rendererSealed=false`、创世三卡 **tokenURI 全部经公共节点读出**(SVG 各 ~2.1KB,五星 LEGEND 卡面完整)。
 
 **驱动纪律沉淀**(p11/p11b 已固化):精确匹配行选择器、deOverlay 常态化、编译产物按内容轮询(J-013 姿势)、幂等工作区写入(J-005 姿势)、At Address 恢复路径、封印类不可逆操作一律不自动化。
+
+## 2026-07-14 · P12:虎符演武 —— EIP-712 签名铸卡上真链
+
+**合约**(commit `c71afe1`):`TigerTally` 零依赖 EIP-712——嵌套结构体哈希(MintOrder 内嵌完整 Card)、动态 domain(`block.chainid`)、不记名/定向+代付双券型、`voidTally` 作废(签名不可撤但可作废)、防延展 `ecrecover`(仅 65 字节、low-s、v∈{27,28} 且 0/1 规范化);虎符经两步移交**出任 suzerain**——两步制存在的意义(合约受让必须主动 accept)由此实证——全部王座权能配元帅直通道 + `returnSuzerainty` 逃生门。测试 71→92,覆盖率保持全 100%,链上 digest 与 ethers `TypedDataEncoder` 差分锚定。
+
+**Nile 演武**(`TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19`):部署→就任(链上核验 suzerain==tally)→元帅经 **TronLink typed-data 弹窗**签发不记名虎符→持券人兑现(tx `015290ec…`)→**诸葛亮 #4 铸成**(智力 100/LEGEND/系列 Tiger Tally)。核验:totalMinted=4、ownerOf(4)=元帅、tallyBroken(1)=true、tokenURI(4) 公共节点可读。
+
+**方法论沉淀**:
+
+- **chainId 不用猜**:对候选值逐一算 `hashDomain` 与链上 `domainSeparator()` 比对——Nile 实测 3448148188。任何 EIP-712 跨链集成都该这么做而不是查文档硬编码。
+- **签名先本地验再上链**:`_signTypedData` 拿到签名后,先用 ethers 对**权威 digest** 做 `recoverAddress`,恢复出元帅地址才发交易——编码变体(base58/hex 地址)的不确定性在链下消化,一笔失败交易都不用付。tronweb 的 base58 输入变体一次即中。
+- **驱动坑 ×3(全部旧课重修)**:①残留实例让"等新实例"检查空转,部署静默上链(白名单免弹窗)——用链查真相;②实例标题是截断地址(P6 原话"自动化要走地址簿"),全地址匹配永假——补截断形匹配;③自研驱动的元组类型串把 Card 的 6 个 uint8 写成 7 个——**差分对拍(链上 digestOf vs 本地 encoder)当场抓获**,这正是给 digestOf 留 public 的原因。
