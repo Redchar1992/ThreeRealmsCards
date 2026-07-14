@@ -137,16 +137,26 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
     await r.locator(`button[title^="${fn} - "]`).first().click()
     await page.waitForTimeout(1300)
   }
-  // Decoded reads render as instance-level tree nodes ("0: bool: true",
-  // "0: address: 0x…"). Prior calls' nodes persist and tokenURI's JSON expands
-  // into many nested nodes, so `.last()` is wrong — filter by the expected
-  // Solidity return type and take the most recent match.
-  const decodedOfType = async (type) => {
-    const texts = await page.locator('.instance [data-id^="treeViewLi"]').allInnerTexts().catch(() => [])
-    const hits = texts.map((t) => t.replace(/\s+/g, ' ')).filter((t) => new RegExp(`:\\s*${type}:`, 'i').test(t))
-    return hits.length ? hits[hits.length - 1] : ''
+  // Each function row renders its OWN decoded result inside its subtree. The
+  // instance-global node list is in ROW order, not call order, so scraping the
+  // global "last address node" returns whichever row sits last in the DOM (a
+  // stale value from a different getter). Scope the read to the called row.
+  const readRowDecoded = async (fn) => {
+    const r = rowFor(fn)
+    const txt = (await r.locator('[data-id^="treeViewLi"]').last().innerText().catch(() => '')) ||
+      (await r.evaluate((el) => { const n = el.querySelector('[data-id^="treeViewLi"]'); return n ? n.textContent : '' }).catch(() => ''))
+    return (txt || '').replace(/\s+/g, ' ')
   }
-  const readCall = async (fn, argStr, type) => { await callWith(fn, argStr); return type ? decodedOfType(type) : (await page.locator('.instance [data-id^="treeViewLi"]').last().innerText().catch(() => '')).replace(/\s+/g, ' ') }
+  const readCall = async (fn, argStr, type) => {
+    await callWith(fn, argStr)
+    // wait for the row's own decoded output to reflect the expected type
+    for (let i = 0; i < 15; i++) {
+      const v = await readRowDecoded(fn)
+      if (v && (!type || new RegExp(`:\\s*${type}:`, 'i').test(v))) return v
+      await page.waitForTimeout(400)
+    }
+    return readRowDecoded(fn)
+  }
 
   // genesis so a suzerain + some tokens exist (A is suzerain)
   await callWith('mintPeachGardenGenesis', acctA)

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import { ITRC721 } from "../interfaces/ITRC721.sol";
 import { ITRC721Receiver } from "../interfaces/ITRC721Receiver.sol";
 import { IRenderer } from "../interfaces/IRenderer.sol";
 import { Card } from "../types/CardTypes.sol";
 import { Base64 } from "../libs/Base64.sol";
 import { Str } from "../utils/StrUtils.sol";
 import { Suzerain } from "../access/Suzerain.sol";
+import { CardBazaar } from "../CardBazaar.sol";
 
 /// @dev Test-only doubles for the Hardhat suite — not part of the deployable
 /// surface and excluded from flatten/verification flows.
@@ -66,6 +68,42 @@ contract RevertingRendererMock is IRenderer {
 contract EvilRendererMock is IRenderer {
     function imageURI(Card memory, uint256) external pure override returns (string memory) {
         return '"},"pwn":true,"x":"';
+    }
+}
+
+/// @dev A contract seller for the bazaar with a hostile receive():
+/// mode 0 attempts a reentrant withdraw() when the TRX arrives,
+/// mode 1 flatly refuses TRX (proceeds-transfer failure path).
+contract HostileSellerMock {
+    CardBazaar public immutable bazaar;
+    uint8 public immutable mode;
+    bool public innerWithdrawSucceeded;
+    uint256 public receiveCount;
+
+    constructor(CardBazaar bazaar_, uint8 mode_) {
+        bazaar = bazaar_;
+        mode = mode_;
+    }
+
+    function approveBazaar(ITRC721 cards, uint256 tokenId) external {
+        cards.approve(address(bazaar), tokenId);
+    }
+
+    function listCard(uint256 tokenId, uint256 price) external {
+        bazaar.list(tokenId, price);
+    }
+
+    function doWithdraw() external {
+        bazaar.withdraw();
+    }
+
+    receive() external payable {
+        receiveCount++;
+        if (mode == 1) revert("no thanks");
+        // mode 0: try to drain again mid-payout — CEI must leave nothing
+        try bazaar.withdraw() {
+            innerWithdrawSucceeded = true;
+        } catch {}
     }
 }
 

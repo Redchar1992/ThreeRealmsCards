@@ -47,6 +47,7 @@ stress fixture for Solidity toolchains (see [the spiky inventory](#the-spiky-con
 | `utils/StrUtils.sol` | `toString`, `equal`, `escapeJson` | escape: `"` `\` → backslashed, `< 0x20` → `\u00XX`, UTF-8 passthrough |
 | `PeachPavilion.sol` | escrow: deposit card for heir, heir claims | rejects naked `safeTransferFrom` deliveries |
 | `TigerTally.sol` | 虎符 — EIP-712 signed mint orders (lazy minting); holds the suzerainty while in service | zero-dep nested-struct 712, low-s `ecrecover`, marshal passthroughs for the full suzerain surface |
+| `CardBazaar.sol` | 市集 — fixed-price stalls, TRX-settled, escrowed listings | pull-payment proceeds (CEI, reentrancy-tested), `call{value:}` over `.transfer`, zero governance surface |
 | `mocks/TestMocks.sol` | receiver mocks, lib harness, abstract-base shims | **never deploy** |
 
 ## Standards conformance

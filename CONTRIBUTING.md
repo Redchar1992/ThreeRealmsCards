@@ -7,7 +7,7 @@ help keep it that way.
 
 ```bash
 npm install        # node >= 20
-npm test           # 92 specs, ~2s
+npm test           # 111 specs, ~3s
 npm run coverage   # must stay at 100% — CI enforces it
 ```
 

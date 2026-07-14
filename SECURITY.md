@@ -17,7 +17,7 @@
 
 ## Engineering posture
 
-- 92 Hardhat specs; **100% statement / branch / function / line coverage**
+- 111 Hardhat specs; **100% statement / branch / function / line coverage**
   over every deployable contract (mocks excluded), enforced by a CI gate
   that fails below 100%.
 - Differential tests: the on-chain Base64 and decimal encoders are compared
@@ -42,6 +42,7 @@
 | hand over control | `suzerain` → heir | two-step: heir must `acceptSuzerainty()`; `address(0)` cancels |
 | swap / seal the art renderer | `suzerain` (until sealed) | presentation-only: a renderer can never touch ownership, stats or metadata text; hostile output is escaped inert; failures degrade to imageless metadata; `sealRenderer()` is one-way |
 | sign mint orders / void tallies / drive the seat while a TigerTally holds the throne | `marshal` (immutable per tally) | vouchers can be bricked (`voidTally`) but never unsigned; every voucher mint still passes the cards contract's own validation; `returnSuzerainty` is the always-available escape hatch |
+| administer the bazaar (fees, sweeps, freezes) | **nobody** | the bazaar has no owner; proceeds are withdrawable only by their seller, forever |
 | pause / upgrade / burn / censor transfers | **nobody** | not implemented — deployed code is immutable |
 
 Holders' transfer and approval rights follow TRC-721 exactly; the suzerain
