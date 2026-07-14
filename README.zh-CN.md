@@ -53,7 +53,7 @@ contracts/
 
 | 版本 | 合约 | 地址 | 备注 |
 |---|---|---|---|
-| **v5（当前）** | `ThreeRealmsCards` + `CardRenderer` + `TigerTally` | [`TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X`](https://nile.tronscan.org/#/contract/TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X) · [`TAsJa3bb…`](https://nile.tronscan.org/#/contract/TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ) · [`TMUmN6NK…`](https://nile.tronscan.org/#/contract/TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19) | 链上 SVG 卡面已生效；虎符**在任 suzerain**，诸葛亮 #4 由 TronLink 签发的 EIP-712 虎符兑现铸造 |
+| **v5（当前）** | `ThreeRealmsCards` + `CardRenderer` + `TigerTally` + `CardBazaar` | [`TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X`](https://nile.tronscan.org/#/contract/TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X) · [`TAsJa3bb…`](https://nile.tronscan.org/#/contract/TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ) · [`TMUmN6NK…`](https://nile.tronscan.org/#/contract/TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19) · [`TKfYhL4A…`](https://nile.tronscan.org/#/contract/TKfYhL4AQvR5zHxaWezFN4ve7PChsEB6RU) | 链上 SVG 卡面已生效；虎符**在任 suzerain**（诸葛亮 #4 虎符兑现铸造）；市集用真实 TRX 闭环了挂单 → 购买 → 提款全周期 |
 | v4（历史） | 渲染层首发 | [`THRSFpEV…`](https://nile.tronscan.org/#/contract/THRSFpEVownGtVx7WjdzYbbvqbTsD3iywJ) | 驱动 bug 误封印渲染器；4.07M gas 的 tokenURI 被公共节点拒读——均如实记录 |
 | v3（历史） | 加固版 11 文件 | [`TYK5P6bU…`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | `supportsInterface` 与两步移交链上验证 |
 | v2（历史） | 模块化 9 文件 | [`TEzyMokX…`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | `cardKeyOf`（global using-for）真链验证 |
