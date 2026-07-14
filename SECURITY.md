@@ -6,9 +6,10 @@
   description refers to engineering practice (scope, tests, documentation),
   not to a completed audit. Do not custody meaningful value on unaudited
   deployments.
-- The live Nile instances are **testnet** deployments; the current `TEzyMokX…`
-  instance additionally predates the latest hardening round (two-step
-  handover, safe transfers, TRC-165, JSON escaping).
+- The live Nile instances are **testnet** deployments. The current
+  `TYK5P6bU…` (v3) instance runs the hardened build — TRC-165, safe
+  transfers and the two-step handover ABI were verified on chain right
+  after deployment; `TEzyMokX…` (v2) and `TBig1iST…` (v1) are historical.
 
 ## Engineering posture
 

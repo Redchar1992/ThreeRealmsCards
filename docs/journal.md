@@ -111,3 +111,15 @@
 **做了什么**:9 文件架构直接写入轻量工作区 `three-realms-v2`(15KB 纯文本,避开 J-009 的 PNG 撑爆问题)→ 0.8.20 builtin 编译整依赖图 → Injected TronWeb 部署 → **新 `ThreeRealmsCards` 上链 Nile: `TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`** → 创世 mint 上链。链上直查确认:`genesisSealed=true / totalMinted=3 / balanceOf=3`;`tokenURI(2)` 解码 = Guan Yu #2 / SHU(库 base64 管线真链可用);**`cardKeyOf(1)=0xaef847e7…` — global using-for 在真链上生效**。详见 `deployments/nile.md`(v2)。
 
 **过程小结**:部署+创世两笔真实签名成功;点击遮罩(webpack overlay)拦了一次读回重试,但交易早已上链,改用 TronWeb 直查链上状态确认——**读链比读 UI 更可靠**。PeachPavilion 托管需第二个 Nile 账户,真链未部署,VM 已全验。至此三分天下从单合约演进到模块化架构并两度上链,dogfooding 战役全部收官。
+
+## 2026-07-14 · 战役后:加固轮 + 开源标杆化 + P8 重部署
+
+**合约加固**(commit `4956323`):两步主公移交(`passSuzerainty` 指定 → `acceptSuzerainty` 生效,address(0) 取消)、`safeTransferFrom`×2 + `ITRC721Receiver` try/catch 受体探测、TRC-165(`type().interfaceId` 编译器计算)、`ownerOf`/`balanceOf`/`getApproved` 规范级回滚、`tokenURI` JSON 转义(`Str.escapeJson`);`PeachPavilion` 拒收绕过托管的裸 safe 投递。**标杆化**(commits `37d3e82`/`7bf3eaf`):Hardhat 逻辑回归 54 用例、语句/分支/函数/行覆盖率 100%(CI 硬闸门,GitHub Actions 全绿);双语 README、architecture/case-study/SECURITY/CONTRIBUTING/LICENSE;仓库 description/topics/homepage 补齐。
+
+**P8 · 加固版上 Nile(v3)**:`tools/p8-nile-v3.cjs`(p7 改造:11 文件、TronLink 弹窗自动确认、幂等工作区写入)——**`TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR`**,创世已铸。TronGrid 直查:`genesisSealed=true`、`totalMinted=3`、`supportsInterface(0x80ac58cd / 0x5b5e139f)=true`、`(0xffffffff)=false`、`heirApparent=0` —— 加固 ABI 链上实证(TRC-165 只存在于加固版,是最干净的"新代码已上链"证明)。详见 `deployments/nile.md`(v3)。
+
+**过程发现**:
+
+- **J-014(观察,UI 提示面待复核)**:默认 fee limit 400,000,000 sun 对加固版部署不足——首次尝试 `OUT_OF_ENERGY` 上链失败(tx `7876ad49…`,`energy_usage_total` 恰好 4,000,000,与 Nile 100 sun/energy 换算吻合;白付 23.885 TRX 手续费),实需 4,260,454。较大合约的用户会撞同一堵墙。建议:部署前按字节码估算能量、fee limit 不足时预警;`OUT_OF_ENERGY` 失败后给出"上调 fee limit"引导。(本轮驱动脚本未截获 IDE 终端对该失败的提示样式,正式提缺陷前需复核——J-013 的教训。)
+- **驱动教训 ×2**(非产品缺陷):①直接写 BrowserFS 后立即 reload 会撞 J-005 惰性落盘竞态,首跑成功第二跑树空——改为"内容比对、幂等写入、无变更不 reload"后根除;②udapp 环境切换可能静默回落 JS VM,`0x5B38…` 假账户能骗过"非空"断言——账户校验必须认 T 地址格式。
+- **TronLink 弹窗自动确认可行**:CDP 上下文能枚举并点击扩展弹窗完成签名(仅限脚本自己刚发起的测试网交易);首次确认把站点加入白名单后,后续交易静默签名,连弹窗都不再出现。

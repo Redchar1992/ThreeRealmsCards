@@ -34,6 +34,7 @@ coverage lives in [dogfooding-matrix.md](dogfooding-matrix.md).*
 | P5 wrap | backup/restore drill; campaign accounting | workspace zip export/restore, global search |
 | P6 modular | **9-file architecture, deliberately spiky** (see [architecture.md](architecture.md)); PeachPavilion escrow | multi-file compile graph, flatten dedup, UML inheritance, analyzers vs assembly/try-catch/global using-for |
 | P7 redeploy | **v2 live on Nile** (`TEzyMokX…`), `cardKeyOf` (global using-for) verified on chain | lightweight workspace, full-graph builtin compile, second TronLink deploy |
+| P8 hardened redeploy | **v3 live on Nile** (`TYK5P6bU…`) — the hardened build; TRC-165 + two-step ownership ABI verified on chain via TronGrid | fee-limit sizing (first attempt `OUT_OF_ENERGY` at the 400 TRX default), TronLink popup auto-confirm, idempotent workspace writes dodging the J-005 race |
 
 After the campaign, the repo gained a Hardhat logic-regression harness
 (54 specs, 100% statement/branch/function/line coverage, CI-gated) and a

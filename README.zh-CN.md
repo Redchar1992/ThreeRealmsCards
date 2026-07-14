@@ -45,10 +45,11 @@ contracts/
 
 | 版本 | 合约 | 地址 | 备注 |
 |---|---|---|---|
-| **v2（当前）** | `ThreeRealmsCards`（模块化 9 文件） | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | 创世已铸；`cardKeyOf`（global using-for）真链验证 |
+| **v3（当前）** | `ThreeRealmsCards`（加固版 11 文件） | [`TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | 创世已铸；`supportsInterface(0x80ac58cd)` 与两步移交 ABI 链上验证 |
+| v2（历史） | `ThreeRealmsCards`（模块化 9 文件） | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | 首次模块化部署；`cardKeyOf`（global using-for）真链验证 |
 | v1（历史） | `ThreeRealmsCards`（单文件） | [`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | 战役首次部署 |
 
-交易、部署账户与验证材料见 [deployments/nile.md](deployments/nile.md)。注意：Nile v2 实例部署于最近一轮加固（两步移交、safe transfer、TRC-165、JSON 转义）之前，需重新部署方可生效。
+交易、部署账户、能耗数据与验证材料见 [deployments/nile.md](deployments/nile.md)。
 
 ## 快速开始
 
@@ -65,14 +66,14 @@ Hardhat 套件是**逻辑回归层**：本代码库用到的一切在上游 solc
 
 **23** 项 IDE 功能端到端走遍 · **13** 条发现（J-001…J-013）· **6** 条修复入库并带回归门禁 · **3** 条复验后诚实撤回 · **2** 条归因到 LocalStorage 后端共同根因、列入上游 IndexedDB 迁移 · **2** 次经 TronLink 真实签名上链 Nile。
 
-- 阶段：P0 立项 → P1 合约开发 → P2 本地链 → P3 版本管理 → P4 实链（v1）→ P5 备份演练收官 → P6 模块化刁钻架构 → P7 新架构上 Nile（v2）。
+- 阶段：P0 立项 → P1 合约开发 → P2 本地链 → P3 版本管理 → P4 实链（v1）→ P5 备份演练收官 → P6 模块化刁钻架构 → P7 新架构上 Nile（v2）→ P8 加固版上 Nile（v3）。
 - 完整日志（中文一手记录）：[docs/journal.md](docs/journal.md) · 功能矩阵：[docs/dogfooding-matrix.md](docs/dogfooding-matrix.md) · 英文案例综述：[docs/case-study.md](docs/case-study.md)。
 
 ## 开发备忘（战役运维信息）
 
 - 开发主战场：TronIDE dev build，工作区 `three-realms-v2`（v1 时期为 `three-realms`），持久浏览器 profile 在 `../.tronide-profile`。
 - 本仓库是规范镜像：IDE 工作区的合约 / 脚本定期同步至此；`tools/` 是驱动各阶段的 Playwright 脚本，`docs/` 记录 dogfooding 进展。
-- 合约改动后同步方向为 仓库 → IDE 工作区（p7 脚本 `FILES` 列表需包含 `interfaces/ITRC165.sol` 与 `interfaces/ITRC721Receiver.sol`）。
+- 合约改动后同步方向为 仓库 → IDE 工作区：直接跑 `tools/p8-nile-v3.cjs`（`FILES` 已含全部 11 文件，幂等写入 + 内容校验，可安全重跑）。
 
 ## 许可证
 

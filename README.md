@@ -45,10 +45,11 @@ contracts/
 
 | Version | Contract | Address | Notes |
 |---|---|---|---|
-| **v2 (current)** | `ThreeRealmsCards` (modular, 9 files) | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | genesis minted; `cardKeyOf` (global using-for) verified on chain |
+| **v3 (current)** | `ThreeRealmsCards` (hardened, 11 files) | [`TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR`](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) | genesis minted; `supportsInterface(0x80ac58cd)` + two-step ownership ABI verified on chain |
+| v2 (historical) | `ThreeRealmsCards` (modular, 9 files) | [`TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9`](https://nile.tronscan.org/#/contract/TEzyMokXwNqJteoSGC1v4rerK4mkfYE1f9) | first modular deploy; `cardKeyOf` (global using-for) verified on chain |
 | v1 (historical) | `ThreeRealmsCards` (single file) | [`TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | first campaign deploy |
 
-Transactions, deployer and verification materials: [deployments/nile.md](deployments/nile.md). The Nile v2 instance predates the latest hardening round (two-step handover, safe transfers, TRC-165, JSON escaping) — redeploy to pick it up.
+Transactions, deployer, energy numbers and verification materials: [deployments/nile.md](deployments/nile.md).
 
 ## Quickstart
 

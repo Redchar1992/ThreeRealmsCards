@@ -1,6 +1,24 @@
 # Nile 测试网部署记录
 
-## v2 — 多文件模块化架构(当前)
+## v3 — 加固版模块化架构(当前)
+
+| 项 | 值 |
+|---|---|
+| 合约 | `ThreeRealmsCards`(11 文件加固版:两步移交 / safeTransferFrom / TRC-165 / JSON 转义) |
+| 地址 | `TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR` |
+| 部署交易 | [`d084fe93…02ef9df`](https://nile.tronscan.org/#/transaction/d084fe936f53d29dfed55d23e96814c7d3d5365233fab3138a56302d202ef9df) |
+| 创世 mint | [`04b74b98…0fefcab`](https://nile.tronscan.org/#/transaction/04b74b98fe02e9b925fd1a66eae877ab81a640614f22a1739d44a30710fefcab) |
+| 浏览器 | [TronScan (Nile) 合约页](https://nile.tronscan.org/#/contract/TYK5P6bUBGuadpjyB9aZ6nVSDEj98PfSWR) |
+| 部署账户 | `TCrDi83pUoK17GbwxN1SckM3YNXzahWvoN` |
+| 编译器 | Tron Solidity 0.8.20(builtin);optimizer 200;fee limit 上限 1000 TRX,实耗 4,260,454 energy |
+| 驱动 | `tools/p8-nile-v3.cjs`(TronLink 弹窗自动确认 + 幂等工作区写入) |
+| 日期 | 2026-07-14(P8) |
+
+链上验证(TronGrid 直查,部署当日):`genesisSealed=true`、`totalMinted=3`、**`supportsInterface(0x80ac58cd)=true`、`(0x5b5e139f)=true`、`(0xffffffff)=false`**——TRC-165 只存在于加固版,直接证明新代码上链;`heirApparent=0`(两步移交 ABI 生效);`tokenURI(2)` 解码为 Guan Yu。桃园创世三卡(刘备 #1 / 关羽 #2 / 张飞 #3)已铸造。
+
+> 教训入账:默认 fee limit 400,000,000 sun 的首次部署 `OUT_OF_ENERGY` 失败(tx `7876ad49…`,energy_usage_total 恰好 4,000,000,白付 23.885 TRX 手续费)——与 Nile 能量单价 100 sun/energy 的换算吻合;加固版实需 4,260,454。上调 fee limit 上限后同一部署一次成功。
+
+## v2 — 多文件模块化架构(历史)
 
 | 项 | 值 |
 |---|---|
