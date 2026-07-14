@@ -16,7 +16,8 @@
 - **零依赖的 TRC-721 参考实现**：完整核心面 + 元数据扩展——双重载 `safeTransferFrom`（try/catch 受体探测）、`type(X).interfaceId` 编译器计算的 TRC-165（不手抄魔法常量）、`ownerOf` / `balanceOf` / `getApproved` 规范级回滚语义、两步 owner 移交、全程自定义错误。不引 OpenZeppelin：上链的每个字节都在本仓库内，一次通读即可完成审计面覆盖。
 - **全链上元数据与卡面**：`Card → JSON → Base64 → data:` URI 之外，`CardRenderer`（丹青）用纯 Solidity 画出 SVG 卡面（阵营配色边框、稀有度星级、四维属性条），以嵌套 `data:image/svg+xml;base64` 内嵌。用户字符串链上做 JSON **和** XML 双重转义；渲染器坏掉或作恶时 `tokenURI` 优雅降级为无图元数据而非整体报废；主公可 `sealRenderer()` 把卡面永久封印。
 - **故意刁钻的 Solidity**：文件级类型与自由函数、`global` using-for、别名命名导入、同文件双路径导入陷阱、public 状态变量覆写接口函数、`unchecked`、assembly 守卫、reverting `receive`/`fallback`——每一处都是为了压测编译器、拍平器、UML、linter 与分析器而放置，并注明了 *为什么*。详见 [docs/architecture.md](docs/architecture.md)。
-- **71 个测试、100% 覆盖率、CI 闸门**：语句 / 分支 / 函数 / 行全部 100%（mocks 除外），回退即 CI 失败。含链上 Base64 / 十进制 / JSON 转义 / XML 转义对参考实现的差分测试、每张 SVG 的 XML 良构校验、safe transfer 受体行为矩阵、种子随机转账风暴对账。
+- **签名驱动的 lazy mint（虎符 TigerTally）**：虎符合约受让 suzerainty 出任"在任铸造官"——两步移交的存在意义正是让**合约**能安全持有王座——并兑现 EIP-712 `MintOrder`：嵌套结构体哈希（订单内嵌完整 `Card`）、不记名/定向 + 代付两种券模式、可作废 nonce、防延展 `ecrecover`、全部 suzerain 权能的元帅直通道与王座归还逃生门。链上 digest 在测试中与 ethers `TypedDataEncoder` 差分锚定。
+- **92 个测试、100% 覆盖率、CI 闸门**：语句 / 分支 / 函数 / 行全部 100%（mocks 除外），回退即 CI 失败。含链上 Base64 / 十进制 / JSON 转义 / XML 转义对参考实现的差分测试、每张 SVG 的 XML 良构校验、safe transfer 受体行为矩阵、种子随机转账风暴对账。
 - **真实的 dogfooding 战役、诚实的账本**：从脚手架、编辑、lint、编译，到 VM 部署、调试、录制回放、TronBox 导出、git 推送、TronLink 实链部署、拍平与验证包——全程在 TronIDE 内完成，走遍 23 项 IDE 功能，提交 13 条发现：6 条修复入库（带回归门禁）、**3 条经严格复验后诚实撤回**（自己的误判也记账）。详见 [docs/case-study.md](docs/case-study.md)。
 
 > **审计状态**：按审计级实践工程化，**尚未经外部审计**。托管真实价值前请先读 [SECURITY.md](SECURITY.md)。
@@ -40,6 +41,8 @@ contracts/
 │   └── utils/StrUtils.sol      toString / equal / escapeJson / escapeXml
 ├── PeachPavilion.sol           桃园馆礼物托管：存卡指定继承人、继承人领取；
 │                               拒收绕过托管的裸 safeTransferFrom
+├── TigerTally.sol              虎符 —— EIP-712 签名铸卡券（lazy mint）；
+│                               在任期间持有 suzerainty
 └── mocks/TestMocks.sol         仅测试用替身 —— 切勿部署
 ```
 
@@ -59,7 +62,7 @@ contracts/
 
 ```bash
 npm install
-npm test              # 71 个用例，约 2 秒，无需本地 TRON 节点
+npm test              # 92 个用例，约 2 秒，无需本地 TRON 节点
 npm run coverage      # istanbul 报告；CI 强制 100%
 npx hardhat compile   # solc 0.8.20，evm target paris（不让 PUSH0 跑在 TVM 前面）
 ```

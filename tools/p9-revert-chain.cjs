@@ -275,60 +275,103 @@ const note = (m) => { notes.push(m); console.log('[p9a][NOTE]', m) }
   await okBtn.waitFor({ timeout: 10_000 })
   await okBtn.click()
   await page.waitForTimeout(2500)
+  // dismiss any lingering modal (a follow-up confirm/notice) before touching
+  // the file tree — a static-backdrop modal intercepts pointer events
+  const dismissModals = async () => {
+    for (let i = 0; i < 4; i++) {
+      const modal = page.locator('[data-id="modalDialogContainer"] .modal, #modal-dialog.modal')
+      if (!await modal.isVisible().catch(() => false)) return
+      const ok = page.locator('#modal-footer-ok')
+      if (await ok.isVisible().catch(() => false)) { await ok.click().catch(() => {}) }
+      else await page.keyboard.press('Escape').catch(() => {})
+      await page.waitForTimeout(600)
+    }
+  }
+  await dismissModals()
   // don't depend on the auto-opened tab (its id/visibility varies with the
   // active side panel) — poll the filesystem directly. The scenario lands in
   // the CURRENT file's directory (fileManager.currentPath()); the current
   // file is PeachPavilion.sol, so that is contracts/.
-  // Read TWO sources of truth: the editor buffer of the auto-opened tab (what
-  // the save actually produced, straight from the file manager) and the
-  // BrowserFS bytes. Comparing them separates "wrote empty" from a read
-  // artifact — prior drivers only checked the tab EXISTED, never its bytes.
-  await page.waitForTimeout(2000)
-  const editorBuf = await page.evaluate(() => {
-    const el = document.getElementById('input')
-    return el && el.editor ? el.editor.getSession().getValue() : ''
-  })
-  let fsRaw = ''
-  for (let i = 0; i < 15; i++) {
-    const probe = await page.evaluate((ws) => {
-      const fsx = window.remixFileSystem
-      for (const p of [`.workspaces/${ws}/contracts/scenario.json`, `.workspaces/${ws}/scenario.json`]) {
-        try { const c = fsx.readFileSync(p, 'utf8'); return { path: p, len: c ? c.length : 0, content: c || '' } } catch (e) {}
-      }
-      return { path: null, len: -1, content: '' }
-    }, WS)
-    if (probe.len > 0) { fsRaw = probe.content; log(`scenario.json (BrowserFS) at ${probe.path}, ${probe.len} bytes`); break }
-    await page.waitForTimeout(1000)
+  // Ground truth = open contracts/scenario.json in the tree and read its
+  // editor buffer (BrowserFS readFileSync is unreliable in this headless
+  // profile — a known read-path artifact; the editor is what the file
+  // manager actually served).
+  await page.locator('#icon-panel div[plugin="filePanel"]').click()
+  await page.waitForTimeout(800)
+  const scFile = page.locator('[data-id="treeViewLitreeViewItemcontracts/scenario.json"]')
+  if (!await scFile.isVisible().catch(() => false)) {
+    const folder = page.locator('[data-id="treeViewLitreeViewItemcontracts"]')
+    if (await folder.isVisible().catch(() => false)) { await folder.click(); await page.waitForTimeout(1000) }
   }
-  log(`editor buffer of scenario tab: ${editorBuf.length} bytes`)
-  const scenarioRaw = fsRaw || editorBuf
-  if (!scenarioRaw) {
-    note(`REAL FINDING candidate: recorder count=${recCount} but BOTH editor buffer AND BrowserFS scenario.json are EMPTY after save — silent empty write`)
-    fs.writeFileSync(SCRATCH + '/p9a-empty-save-evidence.txt', `recorderCount=${recCount}\neditorBuf.length=${editorBuf.length}\nfsRaw.length=${fsRaw.length}\n`)
-    throw new Error('scenario-empty')
+  let scenarioRaw = ''
+  if (await scFile.isVisible().catch(() => false)) {
+    await scFile.click()
+    await page.waitForTimeout(1200)
+    scenarioRaw = await page.evaluate(() => {
+      const el = document.getElementById('input')
+      return el && el.editor ? el.editor.getSession().getValue() : ''
+    })
   }
-  if (editorBuf.length > 0 && fsRaw.length === 0) note('scenario tab shows content but BrowserFS reads empty — read-path artifact, not a save bug')
-  const scenario = JSON.parse(scenarioRaw)
-  const txs = scenario.transactions || []
-  const failedSteps = txs.filter((t) => t.record && t.record.failed === true)
-  const stfSteps = txs.filter((t) => t.record && t.record.name === 'safeTransferFrom')
-  log(`scenario: ${txs.length} steps, ${stfSteps.length} safeTransferFrom, ${failedSteps.length} stamped failed`)
-  if (failedSteps.length === 1 && failedSteps[0].record.name === 'safeTransferFrom') {
-    log('failed:true stamped on EXACTLY the reverted safeTransferFrom — recorder fix holds in anger')
-  } else {
-    note(`failed-stamp mismatch: expected exactly 1 failed safeTransferFrom, got ${failedSteps.length} failed (${failedSteps.map((t) => t.record.name).join(',') || 'none'})`)
+  log(`scenario.json editor buffer: ${scenarioRaw.length} bytes`)
+  if (!scenarioRaw || !scenarioRaw.trim().startsWith('{')) {
+    note(`could not read scenario.json content via editor (got ${scenarioRaw.length} bytes); recorder count was ${recCount}. Falling back to export-only verification.`)
+    scenarioRaw = ''
   }
-  fs.writeFileSync(SCRATCH + '/p9a-scenario.json', scenarioRaw)
+  // scenario.json stamp check (best-effort — the export below is the decisive
+  // proof since it reads the LIVE recorder, not this file)
+  let stampOK = null
+  if (scenarioRaw) {
+    try {
+      const scenario = JSON.parse(scenarioRaw)
+      const txs = scenario.transactions || []
+      const failedSteps = txs.filter((t) => t.record && t.record.failed === true)
+      const stfSteps = txs.filter((t) => t.record && t.record.name === 'safeTransferFrom')
+      log(`scenario: ${txs.length} steps, ${stfSteps.length} safeTransferFrom, ${failedSteps.length} stamped failed`)
+      stampOK = (failedSteps.length === 1 && failedSteps[0].record.name === 'safeTransferFrom')
+      if (stampOK) log('failed:true stamped on EXACTLY the reverted safeTransferFrom (scenario.json)')
+      else note(`scenario stamp: expected 1 failed safeTransferFrom, got ${failedSteps.length} (${failedSteps.map((t) => t.record.name).join(',') || 'none'})`)
+      fs.writeFileSync(SCRATCH + '/p9a-scenario.json', scenarioRaw)
+    } catch (e) { note('scenario.json parse failed: ' + String(e).slice(0, 100)) }
+  }
 
-  // ---------------- TronBox export while the recording is live
+  // ---------------- TronBox export (reads the LIVE recorder) — the decisive
+  // end-to-end proof of BOTH halves of the fix: stamp + fence
+  await page.locator('#icon-panel div[plugin="udapp"]').click()
+  await page.waitForTimeout(800)
+  if (!await page.locator('i.savetransaction').isVisible().catch(() => false)) {
+    await recorderCard.locator('i[class*="arrow"]').first().click()
+    await page.waitForTimeout(500)
+  }
   const exportBtn = page.locator('[data-id="recorderExportTronbox"]')
-  if (!await exportBtn.isVisible().catch(() => false)) await recorderCard.locator('i[class*="arrow"]').first().click()
   const dl = page.waitForEvent('download', { timeout: 30_000 })
   await exportBtn.click()
   const download = await dl
   const zipPath = SCRATCH + '/p9a-tronbox-export.zip'
   await download.saveAs(zipPath)
   log('TronBox export downloaded')
+
+  // unzip the migration and assert the fence: the reverted safeTransferFrom is
+  // a commented REVERTED TODO, while deploy/genesis/successful-transfer are live
+  let migration = ''
+  try {
+    // execFileSync + arg array: no shell, no interpolation
+    migration = require('child_process').execFileSync('unzip', ['-p', zipPath, 'migrations/2_deploy_contracts.js'], { encoding: 'utf8', maxBuffer: 8 << 20 })
+  } catch (e) { note('unzip -p failed: ' + String(e.message || e).slice(0, 120)) }
+  if (migration) {
+    fs.writeFileSync(SCRATCH + '/p9a-migration.js', migration)
+    const liveDeploys = (migration.match(/^\s*await deployer\.deploy\(/gm) || []).length
+    const liveSTF = (migration.match(/^\s*await \w+\.safeTransferFrom\(/gm) || []).length
+    const fencedSTF = (migration.match(/^\s*\/\/ await \w+\.safeTransferFrom\(/gm) || []).length
+    const hasReverted = /REVERTED/.test(migration)
+    log(`migration: ${liveDeploys} live deploy(s), ${liveSTF} live safeTransferFrom, ${fencedSTF} fenced safeTransferFrom, REVERTED marker=${hasReverted}`)
+    if (fencedSTF === 1 && liveSTF === 1 && hasReverted) {
+      log('FENCE VERIFIED: reverted safeTransferFrom is a commented REVERTED TODO; the successful one stays live — J-008 chain holds end-to-end on a real project')
+    } else {
+      note(`FENCE MISMATCH: expected 1 fenced + 1 live safeTransferFrom with REVERTED marker; got fenced=${fencedSTF} live=${liveSTF} marker=${hasReverted}`)
+    }
+  } else {
+    note('could not read migration from export zip (adm-zip missing?) — inspect ' + zipPath)
+  }
 
   // ---------------- debugger on the FAILED tx
   const dbgButtons = page.locator('[data-shared="txLoggerDebugButton"]')

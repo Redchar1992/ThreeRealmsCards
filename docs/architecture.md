@@ -46,6 +46,7 @@ stress fixture for Solidity toolchains (see [the spiky inventory](#the-spiky-con
 | `libs/Base64.sol` | assembly Base64 encoder | was a byte loop until P10: the 4.07M-gas double-encoded tokenURI hit public nodes' constant-call CPU cap (`OutOfTimeException`); now 1.46M. Differential-tested vs Node across the swap |
 | `utils/StrUtils.sol` | `toString`, `equal`, `escapeJson` | escape: `"` `\` → backslashed, `< 0x20` → `\u00XX`, UTF-8 passthrough |
 | `PeachPavilion.sol` | escrow: deposit card for heir, heir claims | rejects naked `safeTransferFrom` deliveries |
+| `TigerTally.sol` | 虎符 — EIP-712 signed mint orders (lazy minting); holds the suzerainty while in service | zero-dep nested-struct 712, low-s `ecrecover`, marshal passthroughs for the full suzerain surface |
 | `mocks/TestMocks.sol` | receiver mocks, lib harness, abstract-base shims | **never deploy** |
 
 ## Standards conformance
@@ -133,6 +134,9 @@ study** — it exists to stress a specific part of the toolchain. Do not
 | reverting `receive()` **and** `fallback()` | both deployables | tooling that probes with plain transfers |
 | pluggable renderer with a one-way seal (`setRenderer` / `sealRenderer`) | `ThreeRealmsCards` | minimal-governance pattern: mutable until sealed, immutable after |
 | assembly Base64 (upgraded from a byte loop) | `libs/Base64.sol` | the P10 discovery: fully on-chain art must fit public nodes' constant-call CPU budget — heavyweight `tokenURI`s get `OutOfTimeException`, not metadata |
+| nested-struct EIP-712 hashing (`MintOrder` wraps `Card`, strings hashed per spec) | `TigerTally.sol` | typed-data encoders; differentially anchored to ethers' `TypedDataEncoder` |
+| contract-held ownership through the two-step handover | `TigerTally` + `Suzerain` | the *reason* one-step transfers to contracts are unsafe, demonstrated live |
+| calldata slices (`signature[0:32]`) + low-s/v-normalizing `ecrecover` | `TigerTally._recover` | analyzers and debuggers on slice ops; EIP-2 malleability discipline |
 | `try/catch` graceful degradation inside a view path | `ThreeRealmsCards.tokenURI` | external-call failure isolation; debugger/analyzer handling of catch-all in views |
 | `immutable` interface reference / `uint64` timestamp | `PeachPavilion.cards`, `Suzerain.enthronedAt` | storage-layout tooling |
 | free function validation (`clampStat` reverts, name notwithstanding) | `types/CardTypes.sol` | free-function call graphs (found J-011: linter false positive, fixed upstream) |
