@@ -177,3 +177,92 @@
 **战役设计**:`EcosystemHandler` 把核心+市集+桃园馆包成 12 个**守卫操作**(预检查、绝不主动 revert;handler 经两步移交亲任 suzerain;`opWarp` 把时间做成一等公民操作,1 秒~15 天随机跳),`fail_on_revert=true` 严格模式——序列中任何一次意外回滚都是发现。**64 序列 × 128 操作,五条不变量逐操作校验,1.44 秒全绿、零回滚**:卡守恒(Σ余额=totalMinted)、**合法归宿**(市集/桃园馆持卡必有对应摊位/礼位——"卡死在托管"整类 bug 在一切可达序列下不可达,桃园馆 v1 的 heir=0 陷阱正属此类)、市集偿付(余额=Σ待提款)、幽灵账本恒等(入=存+出)、王座稳定。CI 加 foundry-toolchain 步骤,双栈同门禁。
 
 **工程战役全线收官**:双栈验证(Hardhat 120 用例 100% 覆盖 + forge 不变量)、五维度链上实证、J 台账 15 条、P0-P15。剩余挂账仅两项外部事务:专业审计、对外曝光。
+
+## 2026-07-14 · P9 回归轮：验证 tron-remix 7-14 修复 + 加固特性 UI 覆盖
+
+**背景**:tron-remix 对 7-13 九笔提交做了 max 多智能体评审,修了 15 项缺陷(recorder 注入路径 revert 标记、lastWorkspace 三污染路径、quota 误诊、a11y、toast 竞态等)。本轮用三分天下 v3 加固合约在 IDE 里实战验证这些修复,并覆盖此前没走过的加固特性输入路径。驱动:`tools/p9-revert-chain.cjs`、`tools/p9b-hardened-ui.cjs`(持久无头 profile,VM 环境)。
+
+### P9-A:revert 全链路 — 今天 recorder 修复(J-008)的真实项目端到端证明 ✅
+
+录制流程:部署 ThreeRealmsCards → 创世 → 部署 PeachPavilion(card) → **safeTransferFrom(A, 托管, 1) 被拒 revert**(托管拒收绕过 deposit 的裸投递)→ safeTransferFrom(A, B, 2) 成功 → 存 scenario → TronBox 导出。
+
+- **导出 migration 围栏验证通过**:`2 live deploy + 1 live safeTransferFrom + 1 fenced safeTransferFrom + REVERTED marker`。被 revert 的那笔 safeTransferFrom 导出成注释掉的 `// REVERTED TODO`,成功的那笔保持活代码——**7-14 修复的核心(注入/receipt 路径的 revert 标记 + 导出围栏)在真实多合约项目上成立**。此前 P2 发现 J-008 时只用旧合约手工场景,这次是修复后的实战回归。
+- **调试器**:能对 reverted tx 开调试器并步进(此前只调过成功交易)。
+- **J-012 再次确认(增强项,非缺陷)**:VM 终端对自定义错误 `ReceiverRejected`/`GiftsOnlyViaDeposit` **不按名解码**,只显示通用 "revert. The transaction has been reverted..."。ABI 在手可解码,建议 v2.3.3 补。
+- **观察(profile 假象,非缺陷)**:无头持久 profile 里 scenario.json 经 BrowserFS/编辑器读取为空,但 live recorder + 导出正常。tron-remix 干净 profile 的门禁 TC-REC-EXP-2 存+读 scenario.json 通过,证明保存链路正常——归入已知 J-005 LocalStorage 后端读取家族。
+
+### P9-B:加固特性 UI 覆盖 ✅(2 验证 + 1 链上证明)
+
+- **TRC-165 `supportsInterface(bytes4)` ✅**:UI 手输 bytes4 参数,`0x80ac58cd`=true、`0x5b5e139f`=true、`0xffffffff`=false——bytes4 输入路径此前没走过。
+- **JSON 转义 ✅**:mintCard 一张 general 名带 `"` 和 `\` 的卡(`Cao "Mengde" \ Cao`),tokenURI base64 解码为**合法 JSON**且 name 完整保留转义字符(`"Cao \"Mengde\" \\ Cao #4"`)——`Str.escapeJson` 真链数据可解。
+- **两步主公移交 ✅**:VM 双账户,A `passSuzerainty(B)` 后 suzerain 仍是 A(**pass 不立即转移**)、切账户到 B、B `acceptSuzerainty()` 后 suzerain 变 B(**accept 才提交,账户切换驱动第二步**);**负向守卫**:非 heir(切回 A)执行 acceptSuzerainty 被 revert、王座留在 B。单轮全绿。
+- **驱动坑(读取假象,非缺陷)**:UDApp 读函数返回值节点 **data-id 全叫 `treeViewLi0`(不唯一)**,按 data-id 建 map 会互相覆盖丢节点——须读文本数组按返回类型(bool/address/string)过滤取最后一个。诊断实锤后修正。
+
+### 组织性发现:J-005/J-009 配额家族在普通工作区写入上复现
+
+P9-B 写 13 文件工作区时,BrowserFS LocalStorage 后端 `Dr.put` 抛配额错误(`new n()` ApiError)——three-realms-v2 累积的编译产物+scenario 撑满 ~5MB。**这是普通工作区写入(非克隆)触发的配额爆掉**,是 J-005/J-009 家族的新证据点(此前证据都是克隆场景)。驱动侧写前清 artifacts/ 释放配额规避。根治仍是 v2.3.3 IndexedDB 迁移。
+
+### P9-C:J-014 复核 — fee limit 不足的 UI 提示(代码级佐证,未烧测试网)✅
+
+前轮 P8 观察到加固版部署撞 `OUT_OF_ENERGY`(烧 23.885 TRX,实需 energy 4,260,454)时,"UI 提示样式待复核"。本轮改用代码检查复核(避免再发失败交易烧用户测试网 TRX),三点坐实 J-014 为**真实增强项**:
+
+1. **默认 fee limit = 400,000,000 sun(400 TRX)硬编码**:`settings.js:422`(`id="gasLimit"` `value="400000000"`,title "Enter the fee limit")。较大合约(加固版需 ~426 TRX@Nile 100sun/energy)必然超限。
+2. **无部署前能量预检**:`blockchain.js` 直接透传 `tx.feeLimit`;`runtimeFacade` 只 `parseSafeInteger` 校验是数字,从不按字节码估算所需能量、也不比对 feeLimit 是否够。
+3. **OUT_OF_ENERGY 只抛原始回执串**:`txRunnerWeb3.ts:549-550`,注入交易 `result==='FAILED'` 且非 `REVERT` 时 `reject(msg)`,msg = `txn.receipt.result`(="OUT_OF_ENERGY")——**无 "上调 fee limit" 引导、无能量数值对比**,用户拿到一个不知所措的原始枚举。
+
+**J-014 定案(增强项,非崩溃/数据缺陷)**:代码检查 + P8 历史实测双证据。建议 v2.3.3:部署前按字节码估算能量、feeLimit 可能不足时预警、OUT_OF_ENERGY 失败回执追加"上调 Fee limit"人话引导。**未发失败交易(尊重钱包/测试网资源,结论已由代码充分支持)**。
+
+### P9-D:今天的 UX 修复已被门禁确定性覆盖(不重复造轮子)
+
+7-14 修复的三个 UX 面(双标签工作区恢复、静态分析折叠组键盘可达+展开态跨编译保持、clone 配额文案)已由 tron-remix 门禁 **TC-WS-RESTORE-3 / TC-SA-004 / TC-GIT-R5** 确定性覆盖(本次评审修复批的 @gate,225/225 全绿)。dogfood 侧无需再跑合成等价场景;其中配额文案那族已由 P9-B 的组织性复现(普通工作区写入爆配额)提供真实项目佐证。
+
+### 驱动经验补充
+
+- 结构体/tuple 入参用 UDApp **折叠态单一输入框**(`data-id="address to, tuple card"`)填 `addr, [tuple-json]`,展开态子字段默认隐藏。
+- **读函数返回值节点 data-id 不唯一(全叫 `treeViewLi0`)**:按 data-id 建 map 会互相覆盖,须读文本数组按返回类型(`0: bool:`/`0: address:`/`0: string:`)过滤取最后一个;同类型 getter 混读仍会串,单类型/分段读可靠。
+- 实例地址被 CSS 省略号截断(`TVm22...AYG9R`),完整值在复制控件的属性里,扫子树属性提取。
+- 加固版部署字节码更大,注意 J-005 配额(普通写入也会爆)与 J-014 fee limit。
+
+### 总账
+
+本轮验证了 tron-remix 7-14 修复批的产品行为(J-008 recorder 修复真实项目端到端成立),覆盖了加固 v3 三条新输入路径(bytes4/JSON 转义/两步移交+账户切换),并给出两条 v2.3.3 增强项的证据:J-012(自定义错误不按名解码)、J-014(fee limit 无预检+裸 OUT_OF_ENERGY)。零新崩溃/数据缺陷。J-005/J-009 配额家族获普通工作区写入的新证据点。全程 IDE 内 + 严格"先验证再定论"(未发失败交易佐证 J-014,scenario 读空严格甄别为 profile 假象)。
+
+### P9-E / P9-F(追加轮):P10-P15 新合约里 P9 没走过的 IDE 表面
+
+问"P10-P15 有没有需要 IDE 测的",判定:P15 Foundry 是独立 CLI 不在 IDE 表面(跳过)、静态分析/UML/Flatten 在更大图上重演价值边际低(跳过);有三条 P9 没走的新输入路径,跑了价值最高的两条(驱动 `tools/p9ef-time-and-value.cjs`,VM)。
+
+**P9-E:桃园馆 v2 时间窗 → VM 时间控制能力探针 ✅(全绿,含关键正面发现)**
+- E1 heir 窗口内 claim 成功(ownerOf 转 heir)、E2 非 heir claim 被拒(NotDesignatedHeir)、E3 giver 窗口内 reclaim 被拒(GiftStillClaimable)。
+- **E4 能力发现(严格甄别过): IDE 的 JS VM `block.timestamp` 会推进**。深 token 2 用 claimBy=now+3s,循环"真实等待 2.5s + 一笔状态改变交易 + reclaimGift":前几轮 GiftStillClaimable revert,数轮后 reclaim **成功**且 ownerOf(2) 回到 giver A。合约 `require(block.timestamp > claimBy)` 是硬门,翻转即证时间越过边界。**结论: 时间窗/deadline 类合约的过期路径在 IDE 内 JS VM 可端到端测**(remix-simulator genesis.ts 用 Date.now(),后续区块跟真实墙钟)——**推翻了"VM 可能冻结时间"的初始假设,先验证后定论**。非缺陷,是能力确认。
+
+**P9-F:市集 CardBazaar payable + callValue 价值闭环 ✅(全绿)**
+- P9 完全没碰 payable/callValue。经 UDApp 的 **Value 字段(#value + #unit=sun)** 传 msg.value:
+- F1 buy 用**错** callValue → WrongTribute revert(value-bearing revert 录制,补了 J-008 的 value 路径新形态)。
+- F2 buy 用**对** callValue → ownerOf(1) 转买家 A、pendingProceeds[B]==1000000 sun(payable + pull-ledger 记账全对)。
+- F3 withdraw() 拉取、pendingProceeds 清零(checks-effects-interactions)。
+
+**未跑(边际低)**: #3 虎符 EIP-712 bytes 签名 + 嵌套 struct 入参——novel 但需 IDE 外生成签名,偏"UDApp 接不接受类型"验证;丹青 SVG/setRenderer→seal——基本是 P9 tokenURI 解码+一次性守卫的重演。可后续补。
+
+**追加轮驱动坑**:①持久 profile 带上轮活跃面板,裸点侧栏图标会 **toggle 关面板**(ensureFilePanel 判可见再点);②PeachPavilion/CardBazaar import 卡接口而非反向,编译 ThreeRealmsCards.sol **不含**它们,须逐个 open+compile 各自 .sol 再部署(卡实例跨重编译保留);③owner/uint 读值同 P9-B 假象:address 返 base58(非 hex 账户)、uint 返 "uint256:"——动态学 A/B 的 base58、uint 过滤要匹配 uint256。
+
+## 2026-07-15 · P9-G:AI ↔ IDE 全工具交互(真实 infraway 网关 claude-opus-4-8)
+
+用户给了真实网关 key + url,综合测 AI 面板与 IDE 的工具交互。驱动 `tools/p9g*.cjs`(default_workspace,分 Part1/2/2b/3;key 从 session scratchpad 读,不进仓库)。
+
+**网关探明(curl)**: infraway 是 **LiteLLM 代理**,Anthropic 原生 `/v1/messages` + tool-use 完整可用,可用模型 `claude-opus-4-8`(IDE 默认)/`claude-haiku-4-5-20251001`;sonnet-4-5、GPT/Gemini/Grok **未开通**。IDE 用 Anthropic SDK(baseURL 指网关即可)。配置极简:默认已 Anthropic+opus+工具开启,只需填 key(不持久,内存)+baseUrl(持久 localStorage `tronide.ai.baseUrl.<vendor>`,https/localhost 才存)。
+
+**结果矩阵(真实 opus 驱动,逐类验证 IDE 副作用)**:
+- **只读/工作区 ✅**: list_files(枚举真实合约)、open_file+read_file(报 store/retrieve)、create_file(**确认框**+落盘,contract AIToken)、create_file **拒绝**(Reject→不落盘)。
+- **编译器 ✅**: set_compiler_version(#versionSelector→builtin)、compile_contract(真编译出 Storage)。
+- **静态分析 ✅**: run_static_analysis 触发分析。
+- **本地 git ✅**(释放配额后 Part2b): git_status/git_log 读真实状态、git_stage_all、git_commit(**确认框**+作者前缀 "TRON IDE AI:"+git_log 见新 commit `9c6855dc`)、git_create_branch(**确认框**+切到新分支)。
+- **Phase B 部署/读 ✅(1 缺陷)**: list_deployable_contracts(列 Storage)、read_contract(基于地址读,跨轮上下文召回部署地址)、check_verification(假地址正确返回 "Invalid TRON address")。**deploy_contract → J-015(见下)**。
+- **UX ✅**: Stop 按钮(忙时 send 翻成 aiStopButton、点击中止回到 idle);错误可见由 TC-AI-012 @gate 覆盖(本轮驱动在 Stop 测试后 fill 时序假象,非产品问题)。
+
+**发现**:
+
+- **J-015(真缺陷,UX 级,中低):AI `deploy_contract` 部署上链成功但不在 Deploy & Run 面板显示实例卡**。`run-tab.js:125 aiDeploy` 调 `blockchain.deployContractAndLibraries` 部署并返回地址(探针实测返回 `0xd9145CCE52...`、确认框正常),**但缺正常部署路径的 `instanceContainer.appendChild(renderInstance(...))`(对比 run-tab.js:490)**。后果:用户经 AI 部署后链上成功、可经 AI read_contract 交互,但**面板里看不到实例、无法用 UI 按钮调方法**(且 write_contract 未上线)——AI 部署的合约在 UI 里"隐形"。**✅ 已修复(tron-remix `d1fe6d9ca`)**: aiDeploy 的 finalCb 复用正常部署路径的事件(clearInstance + newContractInstanceAdded + addResolvedContract),AI 部署的合约现在和手动部署一样出现在 Deploy & Run 面板带交互按钮;探针实测 instances:1、TC-AI-TOOL-011 补断言、ai-deploy-tools(4)+vm-state(6) 全绿。best-effort 包裹,UI 注册失败不影响已成功的上链部署。
+- **正面:create_file 遇 `ENOSPC: LocalStorage is full` 如实报错(非静默),且模型智能诊断"存储已满"、拒绝无意义的空提交并解释** —— 理想 agent 行为。
+- **J-005/J-009 配额家族又一证据**: 在被多轮测试写congested 的 default_workspace 上,git_commit 写 git 对象触发配额写入风暴,**headless 浏览器崩溃**(与既有"配额风暴冻结/崩溃页面"现象一致)。换全新 profile(空 localStorage)后 git 写工具全通——证实是环境配额问题,非 git 缺陷。根治仍是 v2.3.3 IndexedDB 迁移。
+
+**驱动坑**: AI 发送按钮是带 `disabled` 类的 React `<div class="submit-btn">`(仅聊天框有文字时移除该类),Playwright 常规 click 卡 actionability→用 `evaluate(el=>el.click())` 派发 DOM click(React 事件委托会捕获);聊天框要用 placeholder 精确定位(泛 textarea 选择器会填错元素);确认框是 antd `.ant-modal-confirm`(无 data-id,accept=`.ant-btn-primary` text Create/Overwrite/Commit/Create branch/Deploy,reject=Reject)。

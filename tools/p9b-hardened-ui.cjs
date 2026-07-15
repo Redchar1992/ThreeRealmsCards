@@ -137,52 +137,32 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
     await r.locator(`button[title^="${fn} - "]`).first().click()
     await page.waitForTimeout(1300)
   }
-  // Decoded results render at INSTANCE level (not inside the row) as
-  // treeViewLi nodes, positioned in ROW order — so "last address node" is
-  // always whichever getter sits last in the DOM, never the one just called.
-  // Correct approach: snapshot each result node's (data-id → text) BEFORE the
-  // call, then after it find the node that is NEW or whose text CHANGED — that
-  // is this call's own output, regardless of DOM position or in-place reuse.
-  const snapNodes = async () => page.evaluate(() => {
-    const map = {}
-    document.querySelectorAll('.instance [data-id^="treeViewLi"]').forEach((n) => { map[n.getAttribute('data-id')] = (n.textContent || '').replace(/\s+/g, ' ') })
-    return map
-  })
+  // Decoded results render at INSTANCE level as treeViewLi nodes — but their
+  // data-id is NOT unique (every getter's result is "treeViewLi0", proven by
+  // the P9-B diagnostic), so keying by data-id collapses them and drops all
+  // but one. Read the TEXT ARRAY and filter by Solidity return type. A getter's
+  // node updates in place, and only one getter of each type is read per
+  // section, so "last node of the type" is the freshest correct value.
+  const nodesOfType = async (type) => {
+    const texts = await page.locator('.instance [data-id^="treeViewLi"]').allInnerTexts().catch(() => [])
+    return texts.map((t) => t.replace(/\s+/g, ' ')).filter((t) => new RegExp(`:\\s*${type || '\\w+'}:`, 'i').test(t))
+  }
   const readCall = async (fn, argStr, type) => {
-    const before = await snapNodes()
     await callWith(fn, argStr)
     for (let i = 0; i < 15; i++) {
-      const after = await snapNodes()
-      // top-level decoded lines look like "0: <type>: <value>"; prefer those
-      const changed = Object.keys(after).filter((k) => after[k] !== before[k] && /^\d+:/.test(after[k]))
-      const match = changed.filter((k) => !type || new RegExp(`:\\s*${type}:`, 'i').test(after[k]))
-      if (match.length) return after[match[match.length - 1]]
-      if (changed.length && !type) return after[changed[changed.length - 1]]
+      const hits = await nodesOfType(type)
+      if (hits.length) return hits[hits.length - 1]
       await page.waitForTimeout(400)
     }
-    // last resort: any current node of the requested type
-    const fin = await snapNodes()
-    const anyType = Object.values(fin).filter((v) => !type || new RegExp(`:\\s*${type}:`, 'i').test(v))
-    return anyType.length ? anyType[anyType.length - 1] : ''
+    return ''
   }
-  // The `suzerain()` getter reliably renders its decoded value as the LAST
-  // address-typed instance node (it is the last address getter in the DOM);
-  // this read tracks the throne holder across the two-step flow where the
-  // per-call diff read is fragile for the sibling heirApparent getter.
-  let suzDiag = false
+  // Track the throne holder via suzerain() — the only address getter read in
+  // the two-step section, so the last address node is always its value.
   const readSuzerain = async () => {
     await callWith('suzerain')
     for (let i = 0; i < 15; i++) {
-      const snap = await snapNodes()
-      const addrs = Object.values(snap).filter((v) => /:\s*address:/i.test(v))
+      const addrs = await nodesOfType('address')
       if (addrs.length) return (addrs[addrs.length - 1].match(/address:\s*([0-9A-Za-z]+)/) || [])[1] || ''
-      // one-shot diagnostic: what DID render after the suzerain call?
-      if (!suzDiag && i === 4) {
-        suzDiag = true
-        const allNodes = await page.evaluate(() => Array.from(document.querySelectorAll('.instance [data-id^="treeViewLi"]')).map((n) => n.getAttribute('data-id') + '::' + (n.textContent || '').replace(/\s+/g, ' ').slice(0, 50)))
-        const rowText = await rowFor('suzerain').evaluate((el) => (el.textContent || '').replace(/\s+/g, ' ').slice(0, 200)).catch(() => 'NO-ROW')
-        note('suzerain read DIAG — treeViewLi nodes: [' + allNodes.slice(0, 10).join(' | ') + ']  rowText: ' + rowText)
-      }
       await page.waitForTimeout(400)
     }
     return ''
@@ -212,7 +192,7 @@ const note = (m) => { notes.push(m); console.log('[p9b][NOTE]', m) }
   await callWith('mintCard', `${acctA}, ${cardTuple}`)
   await page.waitForTimeout(800)
   // the new token id: genesis minted 3 (ids 1..3), so mintCard makes id 4
-  const uriOut = await readCall('tokenURI', '4')
+  const uriOut = await readCall('tokenURI', '4', 'string')
   let m = uriOut.match(/data:application\/json;base64,([A-Za-z0-9+/=]+)/)
   if (!m) { const b64 = uriOut.match(/([A-Za-z0-9+/]{80,}={0,2})/); if (b64) m = [null, b64[1]] }
   if (m && m[1]) {
