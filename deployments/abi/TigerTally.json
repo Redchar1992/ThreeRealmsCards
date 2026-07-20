@@ -1,0 +1,615 @@
+{
+  "contractName": "TigerTally",
+  "sourceName": "contracts/TigerTally.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract ThreeRealmsCards",
+          "name": "cardContract",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recovered",
+          "type": "address"
+        }
+      ],
+      "name": "ForgedTally",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MalformedTally",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "intruder",
+          "type": "address"
+        }
+      ],
+      "name": "NotMarshal",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "TallyBroken",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        }
+      ],
+      "name": "TallyExpired",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "bearer",
+          "type": "address"
+        }
+      ],
+      "name": "TallyRedeemed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "TallyVoided",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "acceptSuzerainty",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "cards",
+      "outputs": [
+        {
+          "internalType": "contract ThreeRealmsCards",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "general",
+                  "type": "string"
+                },
+                {
+                  "internalType": "enum Faction",
+                  "name": "faction",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "enum Rarity",
+                  "name": "rarity",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "attack",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "intellect",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "command",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "charisma",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "string",
+                  "name": "series",
+                  "type": "string"
+                }
+              ],
+              "internalType": "struct Card",
+              "name": "card",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "deadline",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct TigerTally.MintOrder",
+          "name": "order",
+          "type": "tuple"
+        }
+      ],
+      "name": "digestOf",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "general",
+              "type": "string"
+            },
+            {
+              "internalType": "enum Faction",
+              "name": "faction",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum Rarity",
+              "name": "rarity",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "attack",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "intellect",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "command",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "charisma",
+              "type": "uint8"
+            },
+            {
+              "internalType": "string",
+              "name": "series",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct Card",
+          "name": "card",
+          "type": "tuple"
+        }
+      ],
+      "name": "directMint",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "domainSeparator",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "general",
+              "type": "string"
+            },
+            {
+              "internalType": "enum Faction",
+              "name": "faction",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum Rarity",
+              "name": "rarity",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "attack",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "intellect",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "command",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "charisma",
+              "type": "uint8"
+            },
+            {
+              "internalType": "string",
+              "name": "series",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct Card",
+          "name": "card",
+          "type": "tuple"
+        }
+      ],
+      "name": "hashCard",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "general",
+                  "type": "string"
+                },
+                {
+                  "internalType": "enum Faction",
+                  "name": "faction",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "enum Rarity",
+                  "name": "rarity",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "attack",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "intellect",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "command",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "charisma",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "string",
+                  "name": "series",
+                  "type": "string"
+                }
+              ],
+              "internalType": "struct Card",
+              "name": "card",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "deadline",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct TigerTally.MintOrder",
+          "name": "order",
+          "type": "tuple"
+        }
+      ],
+      "name": "hashOrder",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "marshal",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "mintGenesis",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "firstTokenId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "general",
+                  "type": "string"
+                },
+                {
+                  "internalType": "enum Faction",
+                  "name": "faction",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "enum Rarity",
+                  "name": "rarity",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "attack",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "intellect",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "command",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "charisma",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "string",
+                  "name": "series",
+                  "type": "string"
+                }
+              ],
+              "internalType": "struct Card",
+              "name": "card",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "deadline",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct TigerTally.MintOrder",
+          "name": "order",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "signature",
+          "type": "bytes"
+        }
+      ],
+      "name": "redeem",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "heir",
+          "type": "address"
+        }
+      ],
+      "name": "returnSuzerainty",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sealRenderer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IRenderer",
+          "name": "newRenderer",
+          "type": "address"
+        }
+      ],
+      "name": "setRenderer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "tallyBroken",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "voidTally",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

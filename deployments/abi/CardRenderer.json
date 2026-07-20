@@ -1,0 +1,72 @@
+{
+  "contractName": "CardRenderer",
+  "sourceName": "contracts/render/CardRenderer.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "general",
+              "type": "string"
+            },
+            {
+              "internalType": "enum Faction",
+              "name": "faction",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum Rarity",
+              "name": "rarity",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "attack",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "intellect",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "command",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "charisma",
+              "type": "uint8"
+            },
+            {
+              "internalType": "string",
+              "name": "series",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct Card",
+          "name": "card",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "imageURI",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ]
+}

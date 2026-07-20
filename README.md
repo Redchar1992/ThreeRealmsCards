@@ -61,6 +61,10 @@ contracts/
 
 Transactions, deployer, energy numbers, the honest incident notes and verification materials: [deployments/nile.md](deployments/nile.md).
 
+Explore the live collection and exercise the marketplace, pavilion and tally flows in the
+[Nile dApp](https://redchar1992.github.io/ThreeRealmsCards-Web/). Its independently versioned
+source lives in [Redchar1992/ThreeRealmsCards-Web](https://github.com/Redchar1992/ThreeRealmsCards-Web).
+
 ## Quickstart
 
 ```bash
@@ -84,6 +88,8 @@ The Hardhat suite is a **logic-regression harness**: upstream solc + an EVM is i
 | `docs/journal.md` | full campaign journal (Chinese, primary source) |
 | `docs/dogfooding-matrix.md` | 23-feature coverage matrix |
 | `deployments/nile.md` | live addresses, txids, compiler settings |
+| `deployments/nile.json` | machine-readable Nile network, address and ABI manifest for clients |
+| `deployments/abi/` | curated frontend ABIs generated with `npm run export:frontend` |
 | `scenarios/` | IDE recorder scenario (deploy → genesis → reads), replayable |
 | `exports/` | IDE-generated TronBox project + flattened verification sources |
 | `tools/` | Playwright scripts that drove the IDE for each campaign phase |

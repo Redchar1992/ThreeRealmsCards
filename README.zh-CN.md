@@ -60,6 +60,13 @@ contracts/
 | v1（历史） | 单文件 | [`TBig1iST…`](https://nile.tronscan.org/#/contract/TBig1iST9AW2vUrcQZ2nDTCtL3kf7gb18V) | 战役首次部署 |
 
 交易、部署账户、能耗数据、事故实录与验证材料见 [deployments/nile.md](deployments/nile.md)。
+前端与其他客户端可直接使用机器可读的 [deployments/nile.json](deployments/nile.json)
+以及 `deployments/abi/` 中的精简 ABI；合约重新编译后运行
+`npm run export:frontend` 即可刷新这些集成产物。
+
+可在 [Nile dApp](https://redchar1992.github.io/ThreeRealmsCards-Web/) 浏览全量卡册并体验市集、
+桃园馆和虎符流程；独立版本化的前端源码位于
+[Redchar1992/ThreeRealmsCards-Web](https://github.com/Redchar1992/ThreeRealmsCards-Web)。
 
 ## 快速开始
 
@@ -69,6 +76,7 @@ npm test              # 120 个用例，约 3 秒，无需本地 TRON 节点
 npm run coverage      # istanbul 报告；CI 强制 100%
 forge test            # 不变量战役：64×128 守卫操作、5 条不变量
 npx hardhat compile   # solc 0.8.20，evm target paris（不让 PUSH0 跑在 TVM 前面）
+npm run export:frontend # 刷新 Nile 客户端清单与 ABI
 ```
 
 Hardhat 套件是**逻辑回归层**：本代码库用到的一切在上游 solc + EVM 与 TVM 上指令等价，单元测试因此可以随处秒级运行。链上集成（能量模型、TronLink 签名、TronScan 验证）由 TronIDE 场景回放（`scenarios/`）与 TronBox 导出（`exports/tronbox/`）另行覆盖。

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "network": {
+    "name": "nile",
+    "displayName": "TRON Nile Testnet",
+    "chainId": 3448148188,
+    "chainIdHex": "0xcd8690dc",
+    "rpcUrl": "https://nile.trongrid.io",
+    "explorerUrl": "https://nile.tronscan.org"
+  },
+  "contractSource": {
+    "repository": "https://github.com/Redchar1992/ThreeRealmsCards",
+    "commit": "a4f6259",
+    "compiler": {
+      "version": "0.8.20",
+      "evmVersion": "paris",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      }
+    }
+  },
+  "deployment": {
+    "version": "v5",
+    "deployer": "TCrDi83pUoK17GbwxN1SckM3YNXzahWvoN",
+    "deployedAt": "2026-07-14",
+    "lastVerifiedAt": "2026-07-20"
+  },
+  "contracts": {
+    "cards": {
+      "name": "ThreeRealmsCards",
+      "address": "TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X",
+      "abi": "./abi/ThreeRealmsCards.json",
+      "explorerUrl": "https://nile.tronscan.org/#/contract/TDQ9k3oqaV1tErua4uft1ZnndV96oFBH4X"
+    },
+    "renderer": {
+      "name": "CardRenderer",
+      "address": "TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ",
+      "abi": "./abi/CardRenderer.json",
+      "explorerUrl": "https://nile.tronscan.org/#/contract/TAsJa3bbao3Kk71KMM2TDkpTBqPKvCT4KJ"
+    },
+    "tally": {
+      "name": "TigerTally",
+      "address": "TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19",
+      "abi": "./abi/TigerTally.json",
+      "explorerUrl": "https://nile.tronscan.org/#/contract/TMUmN6NKSyvAR6CJq2U8ndsCjXB2Uc7T19"
+    },
+    "bazaar": {
+      "name": "CardBazaar",
+      "address": "TKfYhL4AQvR5zHxaWezFN4ve7PChsEB6RU",
+      "abi": "./abi/CardBazaar.json",
+      "explorerUrl": "https://nile.tronscan.org/#/contract/TKfYhL4AQvR5zHxaWezFN4ve7PChsEB6RU"
+    },
+    "pavilion": {
+      "name": "PeachPavilion",
+      "address": "TTSyQWDjVbtWv9DuR74HF8fLX9Wsi3iX62",
+      "abi": "./abi/PeachPavilion.json",
+      "explorerUrl": "https://nile.tronscan.org/#/contract/TTSyQWDjVbtWv9DuR74HF8fLX9Wsi3iX62"
+    }
+  }
+}
